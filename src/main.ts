@@ -1,22 +1,39 @@
 import './style.css'
 import * as THREE from 'three'
+import { createScene } from './scene'
 
-// Boot mínimo (M0) — a cena de verdade entra no M1.
 const canvas = document.querySelector<HTMLCanvasElement>('#game')!
-const renderer = new THREE.WebGLRenderer({ canvas, antialias: true })
-renderer.setPixelRatio(Math.min(devicePixelRatio, 2))
+const gs = createScene(canvas)
 
-const scene = new THREE.Scene()
-scene.background = new THREE.Color('#ffe8d9')
-const camera = new THREE.PerspectiveCamera(38, innerWidth / innerHeight, 0.1, 50)
-camera.position.set(0, 1, 4)
+// Placeholder da Jujuba (M1) — vira o modelo .glb no M3.
+const placeholder = new THREE.Mesh(
+  new THREE.CapsuleGeometry(0.32, 0.55, 8, 24),
+  new THREE.MeshStandardMaterial({ color: '#ff9a5c', roughness: 0.85 }),
+)
+placeholder.position.y = 0.595
+gs.foxRoot.add(placeholder)
 
-function resize() {
-  renderer.setSize(innerWidth, innerHeight)
-  camera.aspect = innerWidth / innerHeight
-  camera.updateProjectionMatrix()
+// ---- Game loop ----
+let last = performance.now()
+
+function tick() {
+  const now = performance.now()
+  const dt = Math.min((now - last) / 1000, 0.05)
+  last = now
+  void dt // (M3+: camadas de animação consomem o dt)
+  gs.renderer.render(gs.scene, gs.camera)
 }
-addEventListener('resize', resize)
-resize()
 
-renderer.setAnimationLoop(() => renderer.render(scene, camera))
+gs.renderer.setAnimationLoop(tick)
+
+// Pausa em aba oculta (economia de bateria no celular)
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden) {
+    gs.renderer.setAnimationLoop(null)
+  } else {
+    last = performance.now() // descarta o tempo parado
+    gs.renderer.setAnimationLoop(tick)
+  }
+})
+
+addEventListener('resize', gs.resize)

@@ -6,5 +6,7 @@ blender/preview/
 test-results/
 playwright-report/
 .DS_Store
+/*.png
+.playwright-mcp/
 *.blend
 *.blend1
