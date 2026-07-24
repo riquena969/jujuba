@@ -1,0 +1,10 @@
+node_modules/
+dist/
+certs/
+blender/preview/
+.planning/
+test-results/
+playwright-report/
+.DS_Store
+*.blend
+*.blend1

@@ -1,0 +1,25 @@
+{
+  "name": "jujuba",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite --host",
+    "build": "tsc && vite build",
+    "preview": "vite preview --host",
+    "fox:build": "blender -b --factory-startup --python blender/jujuba.py",
+    "foods:build": "blender -b --factory-startup --python blender/foods.py",
+    "icon:build": "blender -b --factory-startup --python blender/render_icon.py",
+    "assets:build": "npm run fox:build && npm run foods:build && npm run icon:build",
+    "test:e2e": "playwright test --config e2e/playwright.config.ts"
+  },
+  "dependencies": {
+    "three": "^0.185.1"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.62.0",
+    "@types/three": "^0.185.1",
+    "typescript": "~5.9",
+    "vite": "^8.1.5"
+  }
+}
