@@ -91,5 +91,6 @@ npm run test:e2e   # Playwright + mic FAKE (WAV sintético de fala) — cobre ca
 
 ## Roadmap
 
+**Raposinha v2** (mais detalhada, estilo Angela — plano em [docs/raposinha-v2.md](docs/raposinha-v2.md)) ·
 v0.4 escovar os dentes (na pia do banheiro!) · v0.5 roupinhas + guarda-roupa ·
 v0.6 bolinha + moedas · depois: minigames, modo offline, conversa de verdade via IA.
