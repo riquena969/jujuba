@@ -15,6 +15,8 @@ interface Opts {
   /** Setinhas de sala: -1 anterior, +1 próxima. */
   onRoomChange: (dir: 1 | -1) => void
   onSleepToggle: () => void
+  /** Primeiro toque (overlay "Toque para começar") — gesto que destrava áudio/mic. */
+  onFirstTap: () => void
 }
 
 const FOOD_LABELS: Record<FoodKind, string> = {
@@ -38,6 +40,7 @@ export function createUI({
   onMicToggle,
   onRoomChange,
   onSleepToggle,
+  onFirstTap,
 }: Opts): UI {
   const hud = document.querySelector<HTMLDivElement>('#hud')!
 
@@ -49,6 +52,7 @@ export function createUI({
     unlockAudio()
     overlay.classList.add('overlay-out')
     setTimeout(() => overlay.remove(), 450)
+    onFirstTap()
   })
 
   // ---- filtro noturno (dormindo) ----

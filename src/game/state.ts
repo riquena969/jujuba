@@ -14,6 +14,8 @@ export interface StatsData {
   energy?: number
   room?: string
   sleeping?: boolean
+  /** Usuário desligou o mic na mão → não religar sozinho ao entrar na sala. */
+  micUserOff?: boolean
   lastSeen: number
 }
 
@@ -27,6 +29,8 @@ export class Stats {
   room = 'sala'
   /** Sincronizado pelo main com o estado SLEEPING (persistido). */
   sleeping = false
+  /** Preferência: mic desligado manualmente não religa sozinho. */
+  micUserOff = false
   private saveTimer: ReturnType<typeof setTimeout> | undefined
   private listeners: Listener[] = []
 
@@ -49,6 +53,7 @@ export class Stats {
       this.energy = clamp(d.energy ?? 80, 0, 100)
       this.room = typeof d.room === 'string' ? d.room : 'sala'
       this.sleeping = d.sleeping === true
+      this.micUserOff = d.micUserOff === true
       // decay offline desde a última visita (dormindo: energia REGENERA)
       const away = Math.max(0, (Date.now() - d.lastSeen) / 1000)
       this.hunger = clamp(this.hunger - away * HUNGER_DECAY_PER_S, 0, 100)
@@ -72,6 +77,7 @@ export class Stats {
         energy: this.energy,
         room: this.room,
         sleeping: this.sleeping,
+        micUserOff: this.micUserOff,
         lastSeen: Date.now(),
       }
       localStorage.setItem(KEY, JSON.stringify(d))

@@ -21,8 +21,7 @@ test('imitar: IDLE → LISTENING → REPLAYING → IDLE com jaw sync', async ({ 
   await page.waitForFunction(() => window.__jujuba?.rigReady)
   await page.locator('.overlay').click() // "Toque para começar"
 
-  // liga o mic — o Chromium "fala" o voice.wav pelo dispositivo fake
-  await page.getByRole('button', { name: /falar/i }).click()
+  // na sala o mic liga SOZINHO — o Chromium "fala" o voice.wav pelo device fake
   await page.waitForFunction(() => window.__jujuba.voice?.enabled)
 
   await waitState(page, 'LISTENING')

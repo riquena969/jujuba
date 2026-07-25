@@ -95,9 +95,12 @@ FoxRig.load(asset('models/jujuba.glb'))
         if (!voice) return false
         if (voice.enabled) {
           voice.disable()
+          stats.micUserOff = true // desligou na mão: não religar sozinho
         } else {
           await voice.enable()
+          if (voice.enabled) stats.micUserOff = false
         }
+        stats.save()
         syncMicVisual()
         return voice.enabled
       },
@@ -108,7 +111,17 @@ FoxRig.load(asset('models/jujuba.glb'))
       onSleepToggle() {
         behavior?.toggleSleep()
       },
+      onFirstTap() {
+        tryAutoMic()
+      },
     })
+
+    // na sala de estar o mic liga sozinho (a não ser que o usuário o desligue)
+    const tryAutoMic = () => {
+      if (!voice || voice.enabled || stats.micUserOff) return
+      if (rooms.current !== 'sala' || behavior?.state === 'SLEEPING') return
+      void voice.enable().then(() => syncMicVisual())
+    }
     const syncMicVisual = () => {
       if (!voice || !behavior) return
       ui.setMicVisual(
@@ -134,6 +147,7 @@ FoxRig.load(asset('models/jujuba.glb'))
         voice.disable()
         syncMicVisual()
       }
+      if (room === 'sala') tryAutoMic()
     }
     ui.setRoom(rooms.current, { silent: true })
     rooms.apply()

@@ -61,6 +61,27 @@ test('dormir: energia regenera, Zzz, e cutucada acorda', async ({ page }) => {
   await page.waitForFunction(() => window.__jujuba.state === 'IDLE')
 })
 
+test('mic liga sozinho na sala e desliga ao sair', async ({ page }) => {
+  await page.waitForFunction(() => window.__jujuba.voice?.enabled === true)
+
+  await page.locator('.room-prev').click() // cozinha
+  await page.waitForFunction(() => window.__jujuba.voice?.enabled === false)
+
+  await page.locator('.room-next').click() // volta pra sala
+  await page.waitForFunction(() => window.__jujuba.voice?.enabled === true)
+})
+
+test('mic desligado na mão NÃO religa sozinho', async ({ page }) => {
+  await page.waitForFunction(() => window.__jujuba.voice?.enabled === true)
+  await page.locator('.btn-mic').click() // desliga manualmente
+  await page.waitForFunction(() => window.__jujuba.voice?.enabled === false)
+
+  await page.locator('.room-prev').click() // cozinha
+  await page.locator('.room-next').click() // volta pra sala
+  await page.waitForTimeout(400)
+  expect(await page.evaluate(() => window.__jujuba.voice?.enabled)).toBe(false)
+})
+
 test('sala persiste entre visitas', async ({ page }) => {
   await page.locator('.room-prev').click() // cozinha
   await page.waitForTimeout(200)
