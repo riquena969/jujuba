@@ -6,6 +6,7 @@ blender/preview/
 test-results/
 playwright-report/
 .DS_Store
+e2e/fixtures/voice.wav
 /*.png
 .playwright-mcp/
 *.blend

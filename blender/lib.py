@@ -195,7 +195,7 @@ def export_glb(path, min_bytes=20_000):
 _ENGINE_CHAIN = ['BLENDER_EEVEE', 'CYCLES', 'BLENDER_WORKBENCH']
 
 
-def setup_render(res=(640, 768), transparent=False):
+def setup_render(res=(640, 768), transparent=False, view_transform=None):
     s = bpy.context.scene
     want = os.environ.get('JUJUBA_ENGINE', 'BLENDER_EEVEE')
     chain = [want] + [e for e in _ENGINE_CHAIN if e != want]
@@ -220,6 +220,8 @@ def setup_render(res=(640, 768), transparent=False):
         s.render.film_transparent = True
         imgset.color_mode = 'RGBA'
     s.render.resolution_x, s.render.resolution_y = res
+    if view_transform:  # 'Standard' = cores literais (AgX dessatura pastéis)
+        s.view_settings.view_transform = view_transform
 
     # Mundo/ambiente quentinho
     if s.world is None:

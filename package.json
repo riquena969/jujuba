@@ -11,7 +11,8 @@
     "foods:build": "blender -b --factory-startup --python blender/foods.py",
     "icon:build": "blender -b --factory-startup --python blender/render_icon.py",
     "assets:build": "npm run fox:build && npm run foods:build && npm run icon:build",
-    "test:e2e": "playwright test --config e2e/playwright.config.ts"
+    "wav:fixture": "node e2e/fixtures/make-test-wav.mjs",
+    "test:e2e": "npm run wav:fixture && playwright test --config e2e/playwright.config.ts"
   },
   "dependencies": {
     "three": "^0.185.1"
