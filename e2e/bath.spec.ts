@@ -1,5 +1,5 @@
 import { test, expect, type Page } from '@playwright/test'
-import { startGame } from './helpers'
+import { startGame, goToRoom } from './helpers'
 
 // Banheira do banheiro na viewport 390×844 (corpo branco, lado esquerdo).
 const TUB = { x: 60, y: 430 }
@@ -28,9 +28,7 @@ test.beforeEach(async ({ page }) => {
   await page.goto('/')
   await startGame(page)
   await page.waitForFunction(() => window.__jujuba.bath?.ready) // bath-set.glb no ar
-  // sala → cozinha → banheiro (wrap pra trás)
-  await page.locator('.room-prev').click()
-  await page.locator('.room-prev').click()
+  await goToRoom(page, '🛁')
 })
 
 test('banho completo: suja → banheira → ensaboa → enxagua → limpinha → voltar', async ({ page }) => {

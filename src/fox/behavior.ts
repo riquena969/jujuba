@@ -18,6 +18,7 @@ export type FoxState =
   | 'SLEEPING'
   | 'BATHING'
   | 'BRUSHING'
+  | 'PLAYING' // minigame das bolhas
 
 interface Deps {
   rig: FoxRig
@@ -55,9 +56,13 @@ export class FoxBehavior {
       this.state !== 'DRAGGING' &&
       this.state !== 'SLEEPING' &&
       this.state !== 'BATHING' &&
-      this.state !== 'BRUSHING'
+      this.state !== 'BRUSHING' &&
+      this.state !== 'PLAYING'
     )
   }
+
+  /** Bola sendo arrastada por cima dela não é carinho. */
+  suppressPetting = false
 
   /** Escrito pelo BathSystem enquanto esfrega/enxagua — vira sorriso/olhinhos. */
   bathHappy = 0
@@ -82,7 +87,7 @@ export class FoxBehavior {
 
   /** Chamado pelo pointer a cada trecho de "esfregada" válida sobre a raposa. */
   petPulse(point: THREE.Vector3, ndcX: number): void {
-    if (!this.canInterrupt()) return
+    if (!this.canInterrupt() || this.suppressPetting) return
     if (this.state === 'POKED' && this.stateT < 0.15) return
     if (this.state !== 'PETTING') this.enter('PETTING')
     this.sinceStroke = 0
@@ -111,6 +116,19 @@ export class FoxBehavior {
     if (this.state !== 'IDLE') return false
     this.enter('BRUSHING')
     return true
+  }
+
+  /** Tap no assoprador: inicia o minigame das bolhas. */
+  tryStartPlay(): boolean {
+    if (this.state !== 'IDLE') return false
+    this.enter('PLAYING')
+    return true
+  }
+
+  /** Bolinha bateu nela: sustinho animado. */
+  ballNudge(): void {
+    this.deps.animator.flinch()
+    this.bathHappy = Math.min(1, this.bathHappy + 0.5)
   }
 
   /** Botão Dormir/Acordar do quarto. */
@@ -185,7 +203,8 @@ export class FoxBehavior {
     const replaying = this.state === 'REPLAYING'
     const dragging = this.state === 'DRAGGING'
     const sleeping = this.state === 'SLEEPING'
-    const bathing = this.state === 'BATHING' || this.state === 'BRUSHING'
+    const bathing =
+      this.state === 'BATHING' || this.state === 'BRUSHING' || this.state === 'PLAYING'
     this.bathHappy = damp(this.bathHappy, 0, 1.6, dt)
     pose.excitement = petting
       ? 0.95

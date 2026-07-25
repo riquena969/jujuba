@@ -12,6 +12,8 @@ import { FeedingSystem } from './interactions/feeding'
 import { VoiceSystem } from './interactions/voice'
 import { BathSystem } from './interactions/bath'
 import { BrushSystem } from './interactions/brush'
+import { PlayBall } from './interactions/playball'
+import { BubbleGame } from './interactions/bubbles'
 import { NeedGlow } from './fx/needglow'
 import { createUI } from './game/ui'
 import { Rooms, type RoomId } from './game/rooms'
@@ -57,6 +59,8 @@ let feeding: FeedingSystem | null = null
 let voice: VoiceSystem | null = null
 let bath: BathSystem | null = null
 let brush: BrushSystem | null = null
+let ball: PlayBall | null = null
+let bubbles: BubbleGame | null = null
 
 const rooms = new Rooms(gs, stats.room as RoomId)
 void rooms.load()
@@ -90,6 +94,8 @@ FoxRig.load(asset('models/jujuba.glb'))
     void bath.preload()
     brush = new BrushSystem({ gs, rooms, behavior, particles, stats, pose, hitProxy, canvas })
     void brush.preload()
+    ball = new PlayBall({ gs, behavior, stats, pose, canvas })
+    bubbles = new BubbleGame({ gs, rooms, behavior, particles, stats, pose, canvas })
     const ui = createUI({
       onFoodDragStart(kind, x, y) {
         if (!behavior || !feeding || feeding.active) return false
@@ -132,7 +138,8 @@ FoxRig.load(asset('models/jujuba.glb'))
       },
       onBathExit() {
         if (bath?.active) bath.exit()
-        else brush?.exit()
+        else if (brush?.active) brush.exit()
+        else bubbles?.exit()
       },
       onBrushRinse() {
         brush?.rinse()
@@ -194,6 +201,7 @@ FoxRig.load(asset('models/jujuba.glb'))
         syncMicVisual()
       }
       if (room === 'sala') tryAutoMic()
+      ball?.setVisible(room === 'brinquedos')
     }
     ui.setRoom(rooms.current, { silent: true })
     rooms.apply()
@@ -206,6 +214,12 @@ FoxRig.load(asset('models/jujuba.glb'))
     bath.onExit = () => ui.setBathMode(false)
     brush.onEnter = () => ui.setBrushMode(true)
     brush.onExit = () => ui.setBrushMode(false)
+    bubbles.onEnter = () => {
+      ui.setPlayMode(true)
+      ui.updateGameHud(1, 0)
+    }
+    bubbles.onExit = () => ui.setPlayMode(false)
+    bubbles.onHud = (round, popped) => ui.updateGameHud(round, popped)
 
     // dormir: filtro noturno + luz baixa (e restaura sono salvo)
     behavior.onState((s) => {
@@ -236,11 +250,14 @@ function tick() {
   if (voice) voice.update()
   if (bath) bath.update(dt)
   if (brush) brush.update(dt)
+  if (ball) ball.update(dt)
+  if (bubbles) bubbles.update(dt)
   needGlow.update(
     dt,
     rooms.current === 'banheiro' ? rooms.currentGroup() : undefined,
     stats.hygiene < 40,
     stats.teeth < 40,
+    rooms.current === 'brinquedos' ? rooms.currentGroup() : undefined,
   )
   if (animator) animator.update(dt, pose)
   if (expressions) expressions.update(dt)
@@ -291,6 +308,12 @@ if (DEBUG) {
       },
       get brush() {
         return brush
+      },
+      get ball() {
+        return ball
+      },
+      get bubbles() {
+        return bubbles
       },
       dirt,
       mouthDirt,

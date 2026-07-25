@@ -38,6 +38,9 @@ export interface UI {
   setBathMode(on: boolean): void
   setBathTool(tool: 'sponge' | 'shower'): void
   setBrushMode(on: boolean): void
+  /** Minigame das bolhas: HUD de rodada/estouradas + Voltar. */
+  setPlayMode(on: boolean): void
+  updateGameHud(round: number, popped: number): void
 }
 
 export function createUI({
@@ -202,6 +205,11 @@ export function createUI({
   })
   brushTools.append(brushHint, rinseBtn)
 
+  // ---- HUD do minigame das bolhas ----
+  const gameHud = document.createElement('div')
+  gameHud.className = 'game-hud'
+  gameHud.hidden = true
+
   // ---- dormir (só no quarto) ----
   const sleepBtn = document.createElement('button')
   sleepBtn.className = 'btn btn-sleep'
@@ -212,7 +220,7 @@ export function createUI({
     onSleepToggle()
   })
 
-  hud.append(night, bars, nav, toast, carousel, micBtn, sleepBtn, backBtn, tools, brushTools, overlay)
+  hud.append(night, bars, nav, toast, carousel, micBtn, sleepBtn, backBtn, tools, brushTools, gameHud, overlay)
 
   return {
     setMicVisual(mode) {
@@ -266,6 +274,15 @@ export function createUI({
       brushTools.hidden = !on
       nav.hidden = on
       bars.hidden = on
+    },
+    setPlayMode(on) {
+      backBtn.hidden = !on
+      gameHud.hidden = !on
+      nav.hidden = on
+      bars.hidden = on
+    },
+    updateGameHud(round, popped) {
+      gameHud.textContent = `Rodada ${round} · 🫧 ${popped}`
     },
   }
 }

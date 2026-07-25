@@ -4,9 +4,9 @@ import type { GameScene, RoomLook } from '../scene'
 import { DEFAULT_LOOK } from '../scene'
 import { asset } from '../utils/assets'
 
-export type RoomId = 'cozinha' | 'sala' | 'quarto' | 'banheiro'
+export type RoomId = 'cozinha' | 'sala' | 'quarto' | 'banheiro' | 'brinquedos'
 
-export const ROOM_ORDER: RoomId[] = ['cozinha', 'sala', 'quarto', 'banheiro']
+export const ROOM_ORDER: RoomId[] = ['cozinha', 'sala', 'quarto', 'banheiro', 'brinquedos']
 
 export const ROOM_META: Record<RoomId, { label: string; icon: string; look: RoomLook }> = {
   cozinha: {
@@ -41,6 +41,17 @@ export const ROOM_META: Record<RoomId, { label: string; icon: string; look: Room
       floor: '#cfe9e5',
       rug: '#f1fbfa',
       rugRim: '#a9dcd7',
+    },
+  },
+  brinquedos: {
+    label: 'Brinquedos',
+    icon: '🧸',
+    look: {
+      bgTop: '#fdf6d8',
+      bgBottom: '#ffdfae',
+      floor: '#f6e6b8',
+      rug: '#fff8ec',
+      rugRim: '#f7c97f',
     },
   },
 }

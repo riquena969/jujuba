@@ -207,6 +207,75 @@ export function burp(): void {
   lfo.stop(t + 0.36)
 }
 
+/** Quique da bolinha — volume proporcional ao impacto. */
+export function boing(strength = 1): void {
+  const a = getAudio()
+  if (!a) return
+  const { ctx, master } = a
+  const t = ctx.currentTime
+  const osc = ctx.createOscillator()
+  osc.type = 'sine'
+  const f = 260 + strength * 120
+  osc.frequency.setValueAtTime(f, t)
+  osc.frequency.exponentialRampToValueAtTime(f * 0.45, t + 0.12)
+  const g = env(ctx, Math.min(0.3, 0.1 + strength * 0.2), 0.008, 0.12)
+  osc.connect(g).connect(master)
+  osc.start(t)
+  osc.stop(t + 0.15)
+}
+
+/** Bolha nascendo do aro (blub suave). */
+export function blub(): void {
+  const a = getAudio()
+  if (!a) return
+  const { ctx, master } = a
+  const t = ctx.currentTime
+  const osc = ctx.createOscillator()
+  osc.type = 'sine'
+  osc.frequency.setValueAtTime(340, t)
+  osc.frequency.exponentialRampToValueAtTime(520, t + 0.09)
+  const g = env(ctx, 0.09, 0.015, 0.09)
+  osc.connect(g).connect(master)
+  osc.start(t)
+  osc.stop(t + 0.12)
+}
+
+/** Rodada vencida: duas notinhas pra cima. */
+export function roundUp(): void {
+  const a = getAudio()
+  if (!a) return
+  const { ctx, master } = a
+  for (const [i, f] of [659.25, 987.77].entries()) {
+    const t = ctx.currentTime + i * 0.11
+    const osc = ctx.createOscillator()
+    osc.type = 'triangle'
+    osc.frequency.value = f
+    const g = ctx.createGain()
+    g.gain.setValueAtTime(0.0001, t)
+    g.gain.exponentialRampToValueAtTime(0.2, t + 0.02)
+    g.gain.exponentialRampToValueAtTime(0.0001, t + 0.22)
+    osc.connect(g).connect(master)
+    osc.start(t)
+    osc.stop(t + 0.25)
+  }
+}
+
+/** Fim de jogo: murchadinha descendente (sem drama). */
+export function deflate(): void {
+  const a = getAudio()
+  if (!a) return
+  const { ctx, master } = a
+  const t = ctx.currentTime
+  const osc = ctx.createOscillator()
+  osc.type = 'triangle'
+  osc.frequency.setValueAtTime(520, t)
+  osc.frequency.exponentialRampToValueAtTime(160, t + 0.5)
+  const g = env(ctx, 0.22, 0.02, 0.5)
+  osc.connect(g).connect(master)
+  osc.start(t)
+  osc.stop(t + 0.55)
+}
+
 /** Escovadinha nos dentes: chiado rápido mais agudo que a esponja. */
 export function brushScrub(): void {
   const a = getAudio()

@@ -30,6 +30,11 @@ test('salas: setinhas trocam, cada sala mostra seus controles', async ({ page })
   await expect(page.locator('.carousel')).toBeHidden()
   await expect(page.locator('.btn-mic')).toBeHidden()
 
+  // › brinquedos: bolinha visível, sem controles fixos
+  await page.locator('.room-next').click()
+  await page.waitForFunction(() => window.__jujuba.ball !== null)
+  await expect(page.locator('.carousel')).toBeHidden()
+
   // › wrap: volta pra cozinha
   await page.locator('.room-next').click()
   await expect(page.locator('.carousel')).toBeVisible()

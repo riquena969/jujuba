@@ -9,3 +9,14 @@ export async function startGame(page: Page): Promise<void> {
     await page.locator('.overlay').click()
   }
 }
+
+/** Navega até a sala pelo ÍCONE (robusto a mudanças na ordem das salas). */
+export async function goToRoom(page: Page, icon: string): Promise<void> {
+  for (let i = 0; i < 6; i++) {
+    const current = await page.locator('.room-icon').textContent()
+    if (current === icon) return
+    await page.locator('.room-next').click()
+    await page.waitForTimeout(150)
+  }
+  throw new Error(`sala ${icon} não encontrada`)
+}

@@ -91,8 +91,15 @@ npm run test:e2e   # Playwright + mic FAKE (WAV sintético de fala) — cobre ca
   persistência em `localStorage`.
 - Sons: 100% sintetizados via WebAudio (`src/audio/sfx.ts`) — zero arquivos de áudio.
 
+## Salas & atividades
+
+🍳 cozinha (roleta de comidas) · 🛋️ sala (imitar a voz) · 🌙 quarto (dormir) ·
+🛁 banheiro (banho + escovar os dentes) · 🧸 **brinquedos**: bolinha física estilo Pou
+(arrasta e arremessa, ela acompanha e rebate!) e o **minigame das bolhas de sabão** —
+toque no assoprador brilhante, estoure todas antes de fugirem; cada rodada vem com
+mais bolhas, mais rápidas e mais dançantes.
+
 ## Roadmap
 
-v0.5 roupinhas + guarda-roupa · v0.6 bolinha + moedas · depois: minigames, modo
-offline, conversa de verdade via IA. (Raposinha v2 e escovação: entregues ✓ — o plano
-da v2 está em [docs/raposinha-v2.md](docs/raposinha-v2.md).)
+v0.6 roupinhas + guarda-roupa · v0.7 moedas + mais minigames · depois: modo offline,
+conversa de verdade via IA.

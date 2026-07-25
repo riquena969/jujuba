@@ -1,5 +1,5 @@
 import { test, expect, type Page } from '@playwright/test'
-import { startGame } from './helpers'
+import { startGame, goToRoom } from './helpers'
 
 // Pia do banheiro (lado direito) na viewport 390×844.
 const SINK = { x: 345, y: 450 }
@@ -64,9 +64,7 @@ test('escovação completa: pia → escova → enxagua → dentes novos', async 
   })
   expect(await page.evaluate(() => window.__jujuba.mouthDirt.count)).toBeGreaterThan(1)
 
-  // banheiro fica a duas salas: sala → cozinha → banheiro
-  await page.locator('.room-prev').click()
-  await page.locator('.room-prev').click()
+  await goToRoom(page, '🛁')
 
   // tap na pia entra na escovação
   await canvasEvent(page, 'pointerdown', SINK.x, SINK.y)
@@ -102,8 +100,7 @@ test('brilho de necessidade: banheira e pia piscam quando precisam', async ({ pa
     window.__jujuba.stats.setHygiene(20)
     window.__jujuba.stats.setTeeth(20)
   })
-  await page.locator('.room-prev').click()
-  await page.locator('.room-prev').click() // banheiro
+  await goToRoom(page, '🛁')
   await page.waitForTimeout(600)
   const glow1 = await page.evaluate(() => ({
     tub: window.__jujuba.needGlow.tubIntensity,
