@@ -248,6 +248,9 @@ if (DEBUG) {
       get rigReady() {
         return rig !== null
       },
+      get rig() {
+        return rig
+      },
       get voice() {
         return voice
       },

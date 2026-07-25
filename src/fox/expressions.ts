@@ -51,8 +51,18 @@ export class Expressions {
     }
 
     const b = clamp(this.blink, 0, 1)
-    this.rig.setMorph('blinkL', b)
-    this.rig.setMorph('blinkR', b)
+    if (this.rig.hasBone('lidL')) {
+      // v2: piscada por PÁLPEBRA (fechar = rotação negativa em X)
+      this.rig.addRotation('lidL', 'x', -b * LID_CLOSE_RAD)
+      this.rig.addRotation('lidR', 'x', -b * LID_CLOSE_RAD)
+    } else {
+      // v1: morphs achatando o olho
+      this.rig.setMorph('blinkL', b)
+      this.rig.setMorph('blinkR', b)
+    }
     this.rig.setMorph('smile', clamp(this.smile, 0, 1))
   }
 }
+
+/** Quanto a pálpebra gira pra fechar (≈128°, calibrado nos previews). */
+const LID_CLOSE_RAD = 2.23

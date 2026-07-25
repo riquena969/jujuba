@@ -7,7 +7,7 @@
     "dev": "vite --host",
     "build": "tsc && vite build",
     "preview": "vite preview --host",
-    "fox:build": "blender -b --factory-startup --python blender/jujuba.py",
+    "fox:build": "blender -b --factory-startup --python blender/jujuba2.py",
     "foods:build": "blender -b --factory-startup --python blender/foods.py",
     "icon:build": "blender -b --factory-startup --python blender/render_icon.py",
     "assets:build": "npm run fox:build && npm run foods:build && npm run icon:build",

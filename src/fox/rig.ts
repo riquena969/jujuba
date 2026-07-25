@@ -8,8 +8,15 @@ export const BONE_NAMES = [
 ] as const
 export type BoneName = (typeof BONE_NAMES)[number]
 
-export const MORPH_NAMES = ['blinkL', 'blinkR', 'smile'] as const
+/** Ossos da v2 — opcionais: a v1 carrega sem eles, sem quebrar. */
+export const OPTIONAL_BONE_NAMES = ['lidL', 'lidR', 'browL', 'browR', 'tongue'] as const
+export type OptionalBoneName = (typeof OPTIONAL_BONE_NAMES)[number]
+export type AnyBoneName = BoneName | OptionalBoneName
+
+/** Só 'smile' é obrigatório; blinks (v1) e sad/cheekPuff (v2) são opcionais. */
+export const MORPH_NAMES = ['blinkL', 'blinkR', 'smile', 'sad', 'cheekPuff'] as const
 export type MorphName = (typeof MORPH_NAMES)[number]
+const REQUIRED_MORPHS: MorphName[] = ['smile']
 
 interface MorphRef {
   mesh: THREE.Mesh
@@ -30,12 +37,17 @@ interface WorldAxes {
 }
 
 export class FoxRig {
-  readonly bones = {} as Record<BoneName, THREE.Bone>
-  readonly rest = {} as Record<BoneName, RestPose>
-  readonly axes = {} as Record<BoneName, WorldAxes>
+  readonly bones = {} as Record<AnyBoneName, THREE.Bone>
+  readonly rest = {} as Record<AnyBoneName, RestPose>
+  readonly axes = {} as Record<AnyBoneName, WorldAxes>
   /** Lista por morph: glTF divide malha multi-material em vários primitives,
    *  cada um com o próprio morphTargetDictionary — escrevemos em todos. */
-  private morphs = { blinkL: [], blinkR: [], smile: [] } as Record<MorphName, MorphRef[]>
+  private morphs = {
+    blinkL: [], blinkR: [], smile: [], sad: [], cheekPuff: [],
+  } as Record<MorphName, MorphRef[]>
+  /** Material dos dentinhos (v2) — escovação tinge de amarelo→branco. */
+  teethMaterial: THREE.MeshStandardMaterial | null = null
+  private present = new Set<AnyBoneName>()
   private readonly tmpQ = new THREE.Quaternion()
 
   private constructor(readonly root: THREE.Group) {}
@@ -46,21 +58,22 @@ export class FoxRig {
     const missingBones: string[] = []
     const missingMorphs: string[] = []
 
-    for (const name of BONE_NAMES) {
+    const allNames: AnyBoneName[] = [...BONE_NAMES, ...OPTIONAL_BONE_NAMES]
+    for (const name of allNames) {
       const obj = gltf.scene.getObjectByName(name)
       if (!(obj instanceof THREE.Bone)) {
-        missingBones.push(name)
+        if ((BONE_NAMES as readonly string[]).includes(name)) missingBones.push(name)
         continue
       }
       rig.bones[name] = obj
       rig.rest[name] = { pos: obj.position.clone(), quat: obj.quaternion.clone() }
+      rig.present.add(name)
     }
 
     gltf.scene.updateMatrixWorld(true)
     const wq = new THREE.Quaternion()
-    for (const name of BONE_NAMES) {
+    for (const name of rig.present) {
       const bone = rig.bones[name]
-      if (!bone) continue
       bone.getWorldQuaternion(wq)
       const inv = wq.clone().invert()
       rig.axes[name] = {
@@ -74,12 +87,25 @@ export class FoxRig {
       if (!(obj instanceof THREE.Mesh)) return
       obj.frustumCulled = false // malha skinned pequena; evita sumiço por bounds
       const dict = obj.morphTargetDictionary
-      if (!dict) return
-      for (const name of MORPH_NAMES) {
-        if (name in dict) rig.morphs[name].push({ mesh: obj, index: dict[name] })
+      if (dict) {
+        for (const name of MORPH_NAMES) {
+          if (name in dict) rig.morphs[name].push({ mesh: obj, index: dict[name] })
+        }
       }
     })
-    for (const name of MORPH_NAMES) {
+    // material dos dentes (mesh 'Teeth' — pode ser Group de primitives)
+    const teeth = gltf.scene.getObjectByName('Teeth')
+    teeth?.traverse((o) => {
+      if (o instanceof THREE.Mesh && !rig.teethMaterial) {
+        rig.teethMaterial = o.material as THREE.MeshStandardMaterial
+      }
+    })
+    // todos os primitives dos dentes compartilham o material
+    teeth?.traverse((o) => {
+      if (o instanceof THREE.Mesh && rig.teethMaterial) o.material = rig.teethMaterial
+    })
+
+    for (const name of REQUIRED_MORPHS) {
       if (rig.morphs[name].length === 0) missingMorphs.push(name)
     }
 
@@ -91,9 +117,13 @@ export class FoxRig {
     return rig
   }
 
+  hasBone(name: AnyBoneName): boolean {
+    return this.present.has(name)
+  }
+
   /** Volta todos os ossos à pose de descanso — chamada no início de cada frame. */
   resetPose(): void {
-    for (const name of BONE_NAMES) {
+    for (const name of this.present) {
       const b = this.bones[name]
       const r = this.rest[name]
       b.position.copy(r.pos)
@@ -103,8 +133,8 @@ export class FoxRig {
   }
 
   /** Acumula rotação no osso em torno de um eixo de MUNDO (rad). */
-  addRotation(name: BoneName, axis: keyof WorldAxes, angle: number): void {
-    if (angle === 0) return
+  addRotation(name: AnyBoneName, axis: keyof WorldAxes, angle: number): void {
+    if (angle === 0 || !this.present.has(name)) return
     this.tmpQ.setFromAxisAngle(this.axes[name][axis], angle)
     this.bones[name].quaternion.multiply(this.tmpQ)
   }

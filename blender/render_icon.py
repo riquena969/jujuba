@@ -9,12 +9,12 @@ import sys
 
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 import lib  # noqa: E402
-import jujuba  # noqa: E402
+import jujuba2  # noqa: E402
 
 if __name__ == '__main__':
     import bpy
 
-    body, eyes, arm = jujuba.build()
+    body, teeth, eyes, arm = jujuba2.build_v2()
     # sorrisinho leve pro ícone
     lib.set_shape(body, 'smile', 0.6)
 
