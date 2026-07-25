@@ -1,5 +1,13 @@
 # Raposinha v2 — plano da fofura detalhada 🦊✨
 
+> **VEREDITO (2026-07-25):** v2 implementada de ponta a ponta (`blender/jujuba2.py`) e
+> **revertida por preferência do Kevin** — a v1 chibi de esferas é mais bonita aos olhos
+> dele, e gosto é soberano. A v2 fica no repo como experimento; lições aproveitáveis:
+> a íris âmbar texturizada, as pálpebras por osso (contrato de ossos OPCIONAIS já está
+> no runtime, com fallback) e a mesh 'Teeth' tingível. Um futuro retry deve **evoluir as
+> proporções exatas da v1** (mesmas esferas, mesmo rosto) adicionando detalhes AOS POUCOS,
+> em vez de topologia nova de uma vez.
+
 **Objetivo:** evoluir a raposinha de "elipsoides sobrepostos" (v1, estilo massinha) para
 uma personagem mais detalhada e levemente mais realista, mantendo o corpo meio
 humanoide/bípede estilo *Talking Angela* — e mantendo 100% do pipeline scriptado
