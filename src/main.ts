@@ -254,6 +254,9 @@ if (DEBUG) {
       get bath() {
         return bath
       },
+      get feeding() {
+        return feeding
+      },
       dirt,
       get elapsed() {
         return elapsed

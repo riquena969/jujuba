@@ -158,6 +158,55 @@ export function bubblePop(): void {
   osc.stop(t + 0.07)
 }
 
+/** Golinho de canudo/copo: chiado subindo (sluuurp). */
+export function slurp(): void {
+  const a = getAudio()
+  if (!a) return
+  const { ctx, master } = a
+  const t = ctx.currentTime
+  const len = 0.24
+  const buf = ctx.createBuffer(1, Math.ceil(len * ctx.sampleRate), ctx.sampleRate)
+  const data = buf.getChannelData(0)
+  for (let i = 0; i < data.length; i++) data[i] = Math.random() * 2 - 1
+  const src = ctx.createBufferSource()
+  src.buffer = buf
+  const bp = ctx.createBiquadFilter()
+  bp.type = 'bandpass'
+  bp.Q.value = 4
+  bp.frequency.setValueAtTime(380, t)
+  bp.frequency.exponentialRampToValueAtTime(1900, t + len)
+  const g = env(ctx, 0.3, 0.02, 0.22)
+  src.connect(bp).connect(g).connect(master)
+  src.start(t)
+}
+
+/** Arrotinho de barriga cheia (cartoon, sem exagero). */
+export function burp(): void {
+  const a = getAudio()
+  if (!a) return
+  const { ctx, master } = a
+  const t = ctx.currentTime
+  const osc = ctx.createOscillator()
+  osc.type = 'sawtooth'
+  osc.frequency.setValueAtTime(135, t)
+  osc.frequency.exponentialRampToValueAtTime(72, t + 0.3)
+  // "granulado" do arroto: LFO rápido balançando o pitch
+  const lfo = ctx.createOscillator()
+  lfo.frequency.value = 27
+  const lfoDepth = ctx.createGain()
+  lfoDepth.gain.value = 16
+  lfo.connect(lfoDepth).connect(osc.frequency)
+  const lp = ctx.createBiquadFilter()
+  lp.type = 'lowpass'
+  lp.frequency.value = 460
+  const g = env(ctx, 0.34, 0.025, 0.3)
+  osc.connect(lp).connect(g).connect(master)
+  osc.start(t)
+  lfo.start(t)
+  osc.stop(t + 0.36)
+  lfo.stop(t + 0.36)
+}
+
 /** Jingle de "ficou limpinha!": arpejo brilhante subindo. */
 export function sparkle(): void {
   const a = getAudio()

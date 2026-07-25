@@ -51,10 +51,9 @@ test('arrastar até a boca: boca-imã abre e abocanha, fome +30', async ({ page 
     window.__jujuba.stats.hunger = 40
   })
   await startDrag(page)
-  expect(await page.evaluate(() => window.__jujuba.state)).toBe('DRAGGING')
-
-  // aproxima devagarinho: a boca deve ir ABRINDO antes de abocanhar
+  // primeiro puxão pra CIMA ativa o modo alimentar
   await dragMove(page, 195, 600)
+  expect(await page.evaluate(() => window.__jujuba.state)).toBe('DRAGGING')
   await page.waitForTimeout(250)
   await dragMove(page, 195, 470)
   await page.waitForTimeout(350)

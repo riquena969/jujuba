@@ -1,8 +1,8 @@
-import { FOOD_KINDS, type FoodKind } from '../interactions/feeding'
+import type { FoodKind } from '../interactions/feeding'
 import { ROOM_META, type RoomId } from './rooms'
+import { createCarousel } from './carousel'
 import { unlockAudio } from '../audio/context'
 import { pop } from '../audio/sfx'
-import { asset } from '../utils/assets'
 
 interface Opts {
   /** Dedo desceu no item central da roleta. true = arrasto autorizado. */
@@ -24,12 +24,6 @@ interface Opts {
   petName: string
   /** true = ainda sem nome → overlay vira formulário de batismo. */
   firstRun: boolean
-}
-
-const FOOD_LABELS: Record<FoodKind, string> = {
-  cookie: 'Biscoito',
-  apple: 'Maçã',
-  drumstick: 'Coxinha de frango',
 }
 
 export interface UI {
@@ -144,76 +138,8 @@ export function createUI({
   toast.className = 'room-toast'
   let toastTimer: ReturnType<typeof setTimeout> | undefined
 
-  // ---- roleta de comidas (só na cozinha) ----
-  const carousel = document.createElement('div')
-  carousel.className = 'carousel'
-  carousel.hidden = true
-  let activeFood = 0
-
-  const slots: { btn: HTMLButtonElement; img: HTMLImageElement }[] = []
-  const mkSlot = (cls: string) => {
-    const btn = document.createElement('button')
-    btn.className = cls
-    const img = document.createElement('img')
-    img.draggable = false
-    btn.appendChild(img)
-    carousel.appendChild(btn)
-    slots.push({ btn, img })
-    return btn
-  }
-  const leftBtn = mkSlot('car-side car-left')
-  const centerBtn = mkSlot('car-center food-btn')
-  const rightBtn = mkSlot('car-side car-right')
-
-  const foodAt = (offset: number): FoodKind =>
-    FOOD_KINDS[(activeFood + offset + FOOD_KINDS.length) % FOOD_KINDS.length]
-
-  function renderCarousel() {
-    const kinds = [foodAt(-1), foodAt(0), foodAt(1)]
-    slots.forEach(({ btn, img }, i) => {
-      img.src = asset(`icons/food-${kinds[i]}.png`)
-      img.alt = FOOD_LABELS[kinds[i]]
-      btn.setAttribute('aria-label', FOOD_LABELS[kinds[i]])
-    })
-  }
-  renderCarousel()
-
-  const rotate = (dir: 1 | -1) => {
-    activeFood = (activeFood + dir + FOOD_KINDS.length) % FOOD_KINDS.length
-    pop()
-    renderCarousel()
-  }
-  leftBtn.addEventListener('click', () => rotate(-1))
-  rightBtn.addEventListener('click', () => rotate(1))
-
-  // arrasto a partir do item central (tap = voo automático)
-  let drag: { t0: number; x0: number; y0: number; moved: number } | null = null
-  centerBtn.addEventListener('pointerdown', (e) => {
-    unlockAudio()
-    if (!onFoodDragStart(foodAt(0), e.clientX, e.clientY)) return
-    pop()
-    try {
-      centerBtn.setPointerCapture(e.pointerId)
-    } catch {
-      /* pointer sintético (testes) não captura */
-    }
-    drag = { t0: performance.now(), x0: e.clientX, y0: e.clientY, moved: 0 }
-  })
-  centerBtn.addEventListener('pointermove', (e) => {
-    if (!drag) return
-    drag.moved += Math.hypot(e.clientX - drag.x0, e.clientY - drag.y0)
-    drag.x0 = e.clientX
-    drag.y0 = e.clientY
-    onFoodDragMove(e.clientX, e.clientY)
-  })
-  const finishDrag = () => {
-    if (!drag) return
-    const tap = performance.now() - drag.t0 < 250 && drag.moved < 12
-    drag = null
-    onFoodDragEnd(tap)
-  }
-  centerBtn.addEventListener('pointerup', finishDrag)
-  centerBtn.addEventListener('pointercancel', finishDrag)
+  // ---- roleta de comidas fluida (só na cozinha) ----
+  const carousel = createCarousel({ onFoodDragStart, onFoodDragMove, onFoodDragEnd }).el
 
   // ---- mic (só na sala) ----
   const micBtn = document.createElement('button')

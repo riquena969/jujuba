@@ -35,14 +35,27 @@ test('salas: setinhas trocam, cada sala mostra seus controles', async ({ page })
   await expect(page.locator('.carousel')).toBeVisible()
 })
 
-test('roleta: tocar no item lateral gira a seleção', async ({ page }) => {
+test('roleta: arrastar na horizontal rola e encaixa em outro item', async ({ page }) => {
   await page.locator('.room-prev').click() // cozinha
-  const centerAlt = () => page.locator('.car-center img').getAttribute('alt')
-  expect(await centerAlt()).toBe('Biscoito')
-  await page.locator('.car-right').click()
-  expect(await centerAlt()).toBe('Maçã')
-  await page.locator('.car-left').click()
-  expect(await centerAlt()).toBe('Biscoito')
+  const center = () => page.evaluate(() => document.querySelector('.carousel').dataset.center)
+  expect(await center()).toBe('cookie')
+
+  // flick pra esquerda: rola pra frente
+  await page.evaluate(async () => {
+    const el = document.querySelector('.carousel')!
+    const r = el.getBoundingClientRect()
+    const y = r.y + r.height / 2
+    const fire = (type: string, x: number) =>
+      el.dispatchEvent(new PointerEvent(type, { clientX: x, clientY: y, bubbles: true }))
+    fire('pointerdown', r.x + 260)
+    for (let i = 1; i <= 6; i++) {
+      fire('pointermove', r.x + 260 - i * 18)
+      await new Promise((res) => setTimeout(res, 16))
+    }
+    fire('pointerup', r.x + 152)
+  })
+  await page.waitForTimeout(900) // inércia + snap
+  expect(await center()).not.toBe('cookie')
 })
 
 test('dormir: energia regenera, Zzz, e cutucada acorda', async ({ page }) => {

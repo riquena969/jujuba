@@ -73,10 +73,50 @@ def build_drumstick():
     return lib.join(parts, 'Drumstick')
 
 
+def build_juice():
+    m_box = lib.mat('JuiceOrange', '#FF9E3D', roughness=0.55)
+    m_top = lib.mat('JuiceTop', '#FFF6E8', roughness=0.7)
+    m_straw = lib.mat('StrawRed', '#FF5A5A', roughness=0.5)
+    parts = [
+        lib.box('juice_body', (0.085, 0.06, 0.13), (0, 0, 0.005), material=m_box,
+                bevel=0.012),
+        lib.box('juice_top', (0.085, 0.06, 0.028), (0, 0, 0.085), material=m_top,
+                bevel=0.01),
+    ]
+    import bpy
+    bpy.ops.mesh.primitive_cylinder_add(vertices=10, radius=0.009, depth=0.1,
+                                        location=(0.028, 0, 0.14))
+    straw = bpy.context.active_object
+    straw.rotation_euler = (0, D(14), 0)
+    lib._finish(straw, 'straw', m_straw, None)
+    parts.append(straw)
+    return lib.join(parts, 'Juice')
+
+
+def build_milk():
+    m_glass = lib.mat('GlassBlue', '#A9D4F0', roughness=0.15)
+    m_milk = lib.mat('MilkWhite', '#FFFFFF', roughness=0.6)
+    parts = []
+    import bpy
+    bpy.ops.mesh.primitive_cone_add(vertices=24, radius1=0.05, radius2=0.058,
+                                    depth=0.15, location=(0, 0, 0))
+    glass = bpy.context.active_object
+    lib._finish(glass, 'glass', m_glass, None)
+    parts.append(glass)
+    bpy.ops.mesh.primitive_cylinder_add(vertices=24, radius=0.052, depth=0.02,
+                                        location=(0, 0, 0.062))
+    milk = bpy.context.active_object
+    lib._finish(milk, 'milk_top', m_milk, None)
+    parts.append(milk)
+    return lib.join(parts, 'Milk')
+
+
 FOODS = {
     'cookie': build_cookie,
     'apple': build_apple,
     'drumstick': build_drumstick,
+    'juice': build_juice,
+    'milk': build_milk,
 }
 
 if __name__ == '__main__':

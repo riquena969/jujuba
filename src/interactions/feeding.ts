@@ -4,12 +4,14 @@ import type { FoxRig } from '../fox/rig'
 import type { FoxAnimator, PoseInput } from '../fox/animations'
 import type { Particles } from '../fx/particles'
 import type { Stats } from '../game/state'
-import { chomp, gulp } from '../audio/sfx'
+import { chomp, gulp, slurp, burp } from '../audio/sfx'
 import { clamp, damp } from '../utils/math'
 import { asset } from '../utils/assets'
 
-export type FoodKind = 'cookie' | 'apple' | 'drumstick'
-export const FOOD_KINDS: FoodKind[] = ['cookie', 'apple', 'drumstick']
+export type FoodKind = 'cookie' | 'apple' | 'drumstick' | 'juice' | 'milk'
+export const FOOD_KINDS: FoodKind[] = ['cookie', 'apple', 'drumstick', 'juice', 'milk']
+/** Bebidas: golinhos (slurp, gotas, sem migalhas) em vez de mordidas. */
+const DRINKS: ReadonlySet<FoodKind> = new Set(['juice', 'milk'])
 
 const FLY_DUR = 0.5
 const CHOMP_DUR = 0.38
@@ -35,7 +37,11 @@ interface Deps {
 export class FeedingSystem {
   private templates = new Map<FoodKind, THREE.Object3D>()
   private current: THREE.Object3D | null = null
-  private phase: 'idle' | 'drag' | 'cancel' | 'fly' | 'chomp' | 'swallow' = 'idle'
+  private kind: FoodKind = 'cookie'
+  private pendingBurp = false
+  /** Quantos arrotinhos já saíram (testes/curiosidade). */
+  burps = 0
+  private phase: 'idle' | 'drag' | 'cancel' | 'fly' | 'chomp' | 'swallow' | 'burp' = 'idle'
   private t = 0
   private cycleT = 0
   private bitten = false
@@ -85,6 +91,7 @@ export class FeedingSystem {
   private spawn(kind: FoodKind): boolean {
     const tpl = this.templates.get(kind)
     if (!tpl || this.active) return false
+    this.kind = kind
     this.current = tpl.clone(true)
     this.current.rotation.x = 1.1 // inclinada pra câmera (biscoito de frente)
     this.deps.scene.add(this.current)
@@ -206,11 +213,19 @@ export class FeedingSystem {
         this.current!.rotation.y += dt * 1.5
 
         if (!this.bitten && ct >= 0.12) {
-          // momento da boca fechada = mordida!
+          // momento da boca fechada = mordida (ou golinho)!
           this.bitten = true
           this.bites++
-          chomp()
-          particles.spawn('crumb', anchor, 5)
+          const drinking = DRINKS.has(this.kind)
+          if (drinking) {
+            slurp()
+            particles.spawn('drop', anchor, 3)
+            // a caixinha/copo inclina a cada gole
+            this.current!.rotation.x -= 0.28
+          } else {
+            chomp()
+            particles.spawn('crumb', anchor, 5)
+          }
           if (this.bites >= CHOMPS) {
             this.deps.scene.remove(this.current!)
             this.current = null
@@ -220,7 +235,9 @@ export class FeedingSystem {
             animator.bounce()
             stats.addHunger(30)
             stats.addHappiness(4)
-          } else {
+            // barriga estufada? arrotinho a caminho
+            this.pendingBurp = stats.hunger >= 99.5
+          } else if (!drinking) {
             this.current!.scale.setScalar(Math.max(1 - this.bites / CHOMPS, 0.2))
           }
         }
@@ -233,6 +250,26 @@ export class FeedingSystem {
       case 'swallow': {
         this.jaw = damp(this.jaw, 0, 14, dt)
         if (this.t > 0.55) {
+          if (this.pendingBurp) {
+            this.pendingBurp = false
+            this.phase = 'burp'
+            this.t = 0
+            burp()
+            this.burps++
+            animator.flinch() // encolhidinha de vergonha
+          } else {
+            this.phase = 'idle'
+            pose.jawOpen = 0
+            this.onDone?.()
+            return
+          }
+        }
+        break
+      }
+      case 'burp': {
+        // boquinha abre no arroto e fecha devagarinho
+        this.jaw = this.t < 0.3 ? 0.55 : damp(this.jaw, 0, 10, dt)
+        if (this.t > 0.8) {
           this.phase = 'idle'
           pose.jawOpen = 0
           this.onDone?.()
