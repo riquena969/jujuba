@@ -89,5 +89,5 @@ npm run test:e2e   # Playwright + mic FAKE (WAV sintético de fala) — cobre ca
 
 ## Roadmap
 
-v0.2 escovar os dentes + banho · v0.3 roupinhas + guarda-roupa · v0.4 bolinha + moedas ·
-depois: dormir/dia-noite, minigames, modo offline, conversa de verdade via IA.
+v0.3 escovar os dentes + banho (banheiro como 4ª sala) · v0.4 roupinhas + guarda-roupa ·
+v0.5 bolinha + moedas · depois: minigames, modo offline, conversa de verdade via IA.
