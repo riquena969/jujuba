@@ -5,7 +5,7 @@ import type { FoxRig } from './rig'
 import type { Particles } from '../fx/particles'
 import type { Stats } from '../game/state'
 import { Purr, squeak, pop } from '../audio/sfx'
-import { clamp } from '../utils/math'
+import { clamp, damp } from '../utils/math'
 
 export type FoxState =
   | 'IDLE'
@@ -16,6 +16,7 @@ export type FoxState =
   | 'LISTENING'
   | 'REPLAYING'
   | 'SLEEPING'
+  | 'BATHING'
 
 interface Deps {
   rig: FoxRig
@@ -45,15 +46,19 @@ export class FoxBehavior {
     this.stateListeners.push(fn)
   }
 
-  /** EATING, REPLAYING, DRAGGING e SLEEPING não caem em carinho/poke comum. */
+  /** Estados modais não caem em carinho/poke comum. */
   private canInterrupt(): boolean {
     return (
       this.state !== 'EATING' &&
       this.state !== 'REPLAYING' &&
       this.state !== 'DRAGGING' &&
-      this.state !== 'SLEEPING'
+      this.state !== 'SLEEPING' &&
+      this.state !== 'BATHING'
     )
   }
+
+  /** Escrito pelo BathSystem enquanto esfrega/enxagua — vira sorriso/olhinhos. */
+  bathHappy = 0
 
   enter(next: FoxState): void {
     if (this.state === next) return
@@ -90,6 +95,13 @@ export class FoxBehavior {
     }
     if (this.state !== 'IDLE') return
     this.enter('POKED')
+  }
+
+  /** Tap na banheira: entra no banho (só a partir do IDLE). */
+  tryStartBath(): boolean {
+    if (this.state !== 'IDLE') return false
+    this.enter('BATHING')
+    return true
   }
 
   /** Botão Dormir/Acordar do quarto. */
@@ -164,8 +176,21 @@ export class FoxBehavior {
     const replaying = this.state === 'REPLAYING'
     const dragging = this.state === 'DRAGGING'
     const sleeping = this.state === 'SLEEPING'
-    pose.excitement =
-      petting ? 0.95 : eating ? 0.7 : dragging ? 0.55 : replaying ? 0.5 : listening ? 0.3 : 0
+    const bathing = this.state === 'BATHING'
+    this.bathHappy = damp(this.bathHappy, 0, 1.6, dt)
+    pose.excitement = petting
+      ? 0.95
+      : eating
+        ? 0.7
+        : dragging
+          ? 0.55
+          : replaying
+            ? 0.5
+            : bathing
+              ? 0.3 + this.bathHappy * 0.5
+              : listening
+                ? 0.3
+                : 0
     pose.lean = petting
       ? clamp(this.strokeNdcX, -1, 1)
       : dragging
@@ -174,14 +199,15 @@ export class FoxBehavior {
     pose.earsPerk = listening ? 1 : 0
     pose.headTilt = listening ? 0.14 : 0
     pose.sleep = sleeping ? 1 : 0
+    const st = this.deps.stats
     pose.sad =
-      this.deps.stats.hunger < 30 && this.state === 'IDLE'
+      (st.hunger < 30 || st.hygiene < 25) && this.state === 'IDLE'
         ? 1
-        : this.deps.stats.energy < 25 && this.state === 'IDLE'
+        : st.energy < 25 && this.state === 'IDLE'
           ? 0.7 // soninho também murcha as orelhas
           : 0
-    expressions.smileTarget = petting ? 1 : 0
-    expressions.blinkHold = petting || sleeping
+    expressions.smileTarget = petting ? 1 : bathing ? this.bathHappy : 0
+    expressions.blinkHold = petting || sleeping || (bathing && this.bathHappy > 0.45)
     // jawOpen: escrito pela comida (FeedingSystem) e pela voz (VoiceSystem)
   }
 }

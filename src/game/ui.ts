@@ -15,6 +15,9 @@ interface Opts {
   /** Setinhas de sala: -1 anterior, +1 próxima. */
   onRoomChange: (dir: 1 | -1) => void
   onSleepToggle: () => void
+  /** Modo banho: troca de ferramenta e botão Voltar. */
+  onBathTool: (tool: 'sponge' | 'shower') => void
+  onBathExit: () => void
   /** Primeiro toque/batismo — gesto que destrava áudio/mic. name vem do form. */
   onFirstTap: (name?: string) => void
   /** Nome atual da raposinha (mostrado no overlay de retorno). */
@@ -31,10 +34,13 @@ const FOOD_LABELS: Record<FoodKind, string> = {
 
 export interface UI {
   setMicVisual(mode: 'off' | 'on' | 'listening' | 'replaying'): void
-  updateBars(hunger: number, happiness: number, energy: number): void
+  updateBars(hunger: number, happiness: number, energy: number, hygiene: number): void
   /** Ajusta visibilidade dos controles pra sala atual + toast com o nome. */
   setRoom(room: RoomId, opts?: { silent?: boolean }): void
   setSleeping(on: boolean): void
+  /** Liga/desliga a UI do modo banho (Voltar + ferramentas, nav some). */
+  setBathMode(on: boolean): void
+  setBathTool(tool: 'sponge' | 'shower'): void
 }
 
 export function createUI({
@@ -44,6 +50,8 @@ export function createUI({
   onMicToggle,
   onRoomChange,
   onSleepToggle,
+  onBathTool,
+  onBathExit,
   onFirstTap,
   petName,
   firstRun,
@@ -105,6 +113,7 @@ export function createUI({
   const hungerFill = mkBar('🍖', 'Fome')
   const happyFill = mkBar('💛', 'Alegria')
   const energyFill = mkBar('💤', 'Energia')
+  const hygieneFill = mkBar('🧼', 'Higiene')
 
   // ---- navegação de salas (topo-direita) ----
   const nav = document.createElement('div')
@@ -219,6 +228,34 @@ export function createUI({
     })
   })
 
+  // ---- modo banho: Voltar + ferramentas ----
+  const backBtn = document.createElement('button')
+  backBtn.className = 'btn btn-back'
+  backBtn.hidden = true
+  backBtn.textContent = '‹ Voltar'
+  backBtn.addEventListener('click', () => {
+    pop()
+    onBathExit()
+  })
+
+  const tools = document.createElement('div')
+  tools.className = 'bath-tools'
+  tools.hidden = true
+  const mkTool = (tool: 'sponge' | 'shower', emoji: string, label: string) => {
+    const b = document.createElement('button')
+    b.className = 'tool-btn'
+    b.dataset.tool = tool
+    b.innerHTML = `<span>${emoji}</span>${label}`
+    b.addEventListener('click', () => {
+      pop()
+      onBathTool(tool)
+    })
+    tools.appendChild(b)
+    return b
+  }
+  const spongeBtn = mkTool('sponge', '🧽', 'Esponja')
+  const showerBtn = mkTool('shower', '🚿', 'Ducha')
+
   // ---- dormir (só no quarto) ----
   const sleepBtn = document.createElement('button')
   sleepBtn.className = 'btn btn-sleep'
@@ -229,7 +266,7 @@ export function createUI({
     onSleepToggle()
   })
 
-  hud.append(night, bars, nav, toast, carousel, micBtn, sleepBtn, overlay)
+  hud.append(night, bars, nav, toast, carousel, micBtn, sleepBtn, backBtn, tools, overlay)
 
   return {
     setMicVisual(mode) {
@@ -239,13 +276,15 @@ export function createUI({
       micBtn.textContent =
         mode === 'off' ? '🎤 Falar' : mode === 'listening' ? '👂 Ouvindo…' : mode === 'replaying' ? '🗣️ …' : '🎤 Ligado'
     },
-    updateBars(hunger, happiness, energy) {
+    updateBars(hunger, happiness, energy, hygiene) {
       hungerFill.style.width = `${hunger}%`
       hungerFill.classList.toggle('stat-low', hunger < 30)
       happyFill.style.width = `${happiness}%`
       happyFill.classList.toggle('stat-low', happiness < 30)
       energyFill.style.width = `${energy}%`
       energyFill.classList.toggle('stat-low', energy < 30)
+      hygieneFill.style.width = `${hygiene}%`
+      hygieneFill.classList.toggle('stat-low', hygiene < 30)
     },
     setRoom(room, opts) {
       roomIcon.textContent = ROOM_META[room].icon
@@ -265,6 +304,16 @@ export function createUI({
       nav.classList.toggle('nav-disabled', on)
       prevBtn.disabled = on
       nextBtn.disabled = on
+    },
+    setBathMode(on) {
+      backBtn.hidden = !on
+      tools.hidden = !on
+      nav.hidden = on
+      bars.hidden = on // dá lugar pro Voltar; higiene reaparece cheia na volta
+    },
+    setBathTool(tool) {
+      spongeBtn.classList.toggle('tool-active', tool === 'sponge')
+      showerBtn.classList.toggle('tool-active', tool === 'shower')
     },
   }
 }

@@ -4,6 +4,7 @@ const KEY = 'jujuba:v1'
 const HUNGER_DECAY_PER_S = 100 / (10 * 3600) // -100 em 10h
 const HAPPY_DECAY_PER_S = 100 / (16 * 3600) // -100 em 16h
 const ENERGY_DECAY_PER_S = 100 / (14 * 3600) // -100 em 14h acordada
+const HYGIENE_DECAY_PER_S = 100 / (12 * 3600) // -100 em 12h (vai se sujando)
 const SLEEP_REGEN_PER_S = 100 / 40 // dormindo com o jogo aberto: cheia em 40s
 const SLEEP_REGEN_OFFLINE_PER_S = 100 / (6 * 3600) // dormindo offline: cheia em 6h
 
@@ -12,6 +13,7 @@ export interface StatsData {
   hunger: number
   happiness: number
   energy?: number
+  hygiene?: number
   room?: string
   sleeping?: boolean
   /** Usuário desligou o mic na mão → não religar sozinho ao entrar na sala. */
@@ -28,6 +30,7 @@ export class Stats {
   hunger = 80
   happiness = 80
   energy = 80
+  hygiene = 80
   /** Sala atual (persistida). */
   room = 'sala'
   /** Sincronizado pelo main com o estado SLEEPING (persistido). */
@@ -57,6 +60,7 @@ export class Stats {
       this.hunger = clamp(d.hunger, 0, 100)
       this.happiness = clamp(d.happiness, 0, 100)
       this.energy = clamp(d.energy ?? 80, 0, 100)
+      this.hygiene = clamp(d.hygiene ?? 80, 0, 100)
       this.room = typeof d.room === 'string' ? d.room : 'sala'
       this.sleeping = d.sleeping === true
       this.micUserOff = d.micUserOff === true
@@ -71,6 +75,7 @@ export class Stats {
         0,
         100,
       )
+      this.hygiene = clamp(this.hygiene - away * HYGIENE_DECAY_PER_S, 0, 100)
     } catch {
       /* storage indisponível/corrompido: segue com defaults */
     }
@@ -83,6 +88,7 @@ export class Stats {
         hunger: this.hunger,
         happiness: this.happiness,
         energy: this.energy,
+        hygiene: this.hygiene,
         room: this.room,
         sleeping: this.sleeping,
         micUserOff: this.micUserOff,
@@ -127,11 +133,18 @@ export class Stats {
     this.emit()
   }
 
+  setHygiene(v: number): void {
+    this.hygiene = clamp(v, 0, 100)
+    this.scheduleSave()
+    this.emit()
+  }
+
   /** Decay contínuo enquanto o jogo roda (dormindo: energia regenera). */
   update(dt: number): void {
     const h0 = Math.round(this.hunger)
     const a0 = Math.round(this.happiness)
     const e0 = Math.round(this.energy)
+    const y0 = Math.round(this.hygiene)
     this.hunger = clamp(this.hunger - HUNGER_DECAY_PER_S * dt, 0, 100)
     this.happiness = clamp(this.happiness - HAPPY_DECAY_PER_S * dt, 0, 100)
     this.energy = clamp(
@@ -139,10 +152,12 @@ export class Stats {
       0,
       100,
     )
+    this.hygiene = clamp(this.hygiene - HYGIENE_DECAY_PER_S * dt, 0, 100)
     if (
       Math.round(this.hunger) !== h0 ||
       Math.round(this.happiness) !== a0 ||
-      Math.round(this.energy) !== e0
+      Math.round(this.energy) !== e0 ||
+      Math.round(this.hygiene) !== y0
     ) {
       this.emit()
     }

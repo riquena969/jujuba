@@ -90,6 +90,137 @@ export function gulp(): void {
   osc.stop(t + 0.2)
 }
 
+/** Esfregadinha de esponja: chiado curto "squish". */
+export function scrub(): void {
+  const a = getAudio()
+  if (!a) return
+  const { ctx, master } = a
+  const t = ctx.currentTime
+  const len = 0.14
+  const buf = ctx.createBuffer(1, Math.ceil(len * ctx.sampleRate), ctx.sampleRate)
+  const data = buf.getChannelData(0)
+  for (let i = 0; i < data.length; i++) data[i] = Math.random() * 2 - 1
+  const src = ctx.createBufferSource()
+  src.buffer = buf
+  const bp = ctx.createBiquadFilter()
+  bp.type = 'bandpass'
+  bp.frequency.setValueAtTime(750, t)
+  bp.frequency.exponentialRampToValueAtTime(1400, t + len)
+  bp.Q.value = 2.2
+  const g = env(ctx, 0.3, 0.015, 0.12)
+  src.connect(bp).connect(g).connect(master)
+  src.start(t)
+}
+
+/** Tchibum de entrar na banheira. */
+export function splash(): void {
+  const a = getAudio()
+  if (!a) return
+  const { ctx, master } = a
+  const t = ctx.currentTime
+  const len = 0.3
+  const buf = ctx.createBuffer(1, Math.ceil(len * ctx.sampleRate), ctx.sampleRate)
+  const data = buf.getChannelData(0)
+  for (let i = 0; i < data.length; i++) data[i] = (Math.random() * 2 - 1) * (1 - i / data.length)
+  const noise = ctx.createBufferSource()
+  noise.buffer = buf
+  const lp = ctx.createBiquadFilter()
+  lp.type = 'lowpass'
+  lp.frequency.value = 900
+  const ng = env(ctx, 0.4, 0.01, 0.28)
+  noise.connect(lp).connect(ng).connect(master)
+  noise.start(t)
+
+  const osc = ctx.createOscillator()
+  osc.type = 'sine'
+  osc.frequency.setValueAtTime(320, t)
+  osc.frequency.exponentialRampToValueAtTime(110, t + 0.18)
+  const og = env(ctx, 0.22, 0.01, 0.18)
+  osc.connect(og).connect(master)
+  osc.start(t)
+  osc.stop(t + 0.2)
+}
+
+/** Bolhinha de espuma estourando. */
+export function bubblePop(): void {
+  const a = getAudio()
+  if (!a) return
+  const { ctx, master } = a
+  const t = ctx.currentTime
+  const osc = ctx.createOscillator()
+  osc.type = 'sine'
+  const f = 480 + Math.random() * 500
+  osc.frequency.setValueAtTime(f, t)
+  osc.frequency.exponentialRampToValueAtTime(f * 1.9, t + 0.045)
+  const g = env(ctx, 0.14, 0.006, 0.05)
+  osc.connect(g).connect(master)
+  osc.start(t)
+  osc.stop(t + 0.07)
+}
+
+/** Jingle de "ficou limpinha!": arpejo brilhante subindo. */
+export function sparkle(): void {
+  const a = getAudio()
+  if (!a) return
+  const { ctx, master } = a
+  const notes = [523.25, 659.25, 783.99, 1046.5] // C5 E5 G5 C6
+  notes.forEach((f, i) => {
+    const t = ctx.currentTime + i * 0.09
+    const osc = ctx.createOscillator()
+    osc.type = 'triangle'
+    osc.frequency.value = f
+    const g = ctx.createGain()
+    g.gain.setValueAtTime(0.0001, t)
+    g.gain.exponentialRampToValueAtTime(0.22, t + 0.02)
+    g.gain.exponentialRampToValueAtTime(0.0001, t + (i === notes.length - 1 ? 0.5 : 0.24))
+    osc.connect(g).connect(master)
+    osc.start(t)
+    osc.stop(t + 0.55)
+  })
+}
+
+/** Chuveirinho contínuo (ducha): ruído tipo chuva com liga/desliga suave. */
+export class ShowerSound {
+  private nodes: { src: AudioBufferSourceNode; out: GainNode } | null = null
+
+  start(): void {
+    if (this.nodes) return
+    const a = getAudio()
+    if (!a) return
+    const { ctx, master } = a
+    const len = 1.2
+    const buf = ctx.createBuffer(1, Math.ceil(len * ctx.sampleRate), ctx.sampleRate)
+    const data = buf.getChannelData(0)
+    for (let i = 0; i < data.length; i++) data[i] = Math.random() * 2 - 1
+    const src = ctx.createBufferSource()
+    src.buffer = buf
+    src.loop = true
+    const bp = ctx.createBiquadFilter()
+    bp.type = 'bandpass'
+    bp.frequency.value = 2300
+    bp.Q.value = 0.7
+    const out = ctx.createGain()
+    out.gain.setValueAtTime(0.0001, ctx.currentTime)
+    out.gain.exponentialRampToValueAtTime(0.16, ctx.currentTime + 0.12)
+    src.connect(bp).connect(out).connect(master)
+    src.start()
+    this.nodes = { src, out }
+  }
+
+  stop(): void {
+    if (!this.nodes) return
+    const a = getAudio()
+    const { src, out } = this.nodes
+    this.nodes = null
+    if (!a) return
+    const t = a.ctx.currentTime
+    out.gain.cancelScheduledValues(t)
+    out.gain.setValueAtTime(Math.max(out.gain.value, 0.0001), t)
+    out.gain.exponentialRampToValueAtTime(0.0001, t + 0.15)
+    src.stop(t + 0.2)
+  }
+}
+
 /** Ronronar contínuo do carinho: ruído grave modulado a ~24 Hz. */
 export class Purr {
   private nodes: { src: AudioBufferSourceNode; lfo: OscillatorNode; out: GainNode } | null = null

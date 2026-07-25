@@ -23,6 +23,16 @@ test('salas: setinhas trocam, cada sala mostra seus controles', async ({ page })
   await expect(page.locator('.btn-sleep')).toBeVisible()
   await expect(page.locator('.carousel')).toBeHidden()
   await expect(page.locator('.btn-mic')).toBeHidden()
+
+  // › banheiro: sem controles fixos (banho abre no tap da banheira)
+  await page.locator('.room-next').click()
+  await expect(page.locator('.btn-sleep')).toBeHidden()
+  await expect(page.locator('.carousel')).toBeHidden()
+  await expect(page.locator('.btn-mic')).toBeHidden()
+
+  // › wrap: volta pra cozinha
+  await page.locator('.room-next').click()
+  await expect(page.locator('.carousel')).toBeVisible()
 })
 
 test('roleta: tocar no item lateral gira a seleção', async ({ page }) => {

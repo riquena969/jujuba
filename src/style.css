@@ -72,6 +72,10 @@ body {
 }
 
 /* ---- Barras de status ---- */
+.hud-bars[hidden] {
+  display: none;
+}
+
 .hud-bars {
   position: absolute;
   top: calc(14px + env(safe-area-inset-top, 0px));
@@ -278,6 +282,10 @@ body {
 }
 
 /* ---- Navegação de salas ---- */
+.room-nav[hidden] {
+  display: none;
+}
+
 .room-nav {
   pointer-events: auto;
   position: absolute;
@@ -350,6 +358,74 @@ body {
 
 .btn-sleep:active {
   transform: translateX(-50%) scale(0.93);
+}
+
+/* ---- Modo banho ---- */
+.btn-back {
+  left: 12px;
+  top: calc(12px + env(safe-area-inset-top, 0px));
+  bottom: auto;
+  min-height: 48px;
+}
+
+.bath-tools[hidden] {
+  display: none;
+}
+
+.bath-tools {
+  pointer-events: auto;
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  bottom: calc(14px + env(safe-area-inset-bottom, 0px));
+  display: flex;
+  gap: 12px;
+  padding: 10px 14px;
+  border-radius: 28px;
+  background: rgba(255, 255, 255, 0.82);
+  box-shadow: 0 6px 18px rgba(64, 130, 140, 0.28);
+}
+
+.tool-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  min-width: 84px;
+  padding: 8px 14px;
+  border: 3px solid transparent;
+  border-radius: 20px;
+  background: #eefaf9;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 800;
+  color: #2f7e86;
+  cursor: pointer;
+  transition: transform 0.12s ease;
+}
+
+.tool-btn span {
+  font-size: 30px;
+}
+
+.tool-btn:active {
+  transform: scale(0.93);
+}
+
+.tool-active {
+  border-color: #57bcc7;
+  background: #dcf5f4;
+  box-shadow: 0 3px 10px rgba(64, 130, 140, 0.3);
+}
+
+.tool-cursor {
+  position: absolute;
+  left: 0;
+  top: 0;
+  font-size: 40px;
+  pointer-events: none;
+  z-index: 6;
+  filter: drop-shadow(0 3px 5px rgba(40, 90, 100, 0.4));
 }
 
 .night {

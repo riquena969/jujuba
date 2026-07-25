@@ -3,10 +3,12 @@
 > 🎮 **Jogar agora:** <https://riquena969.github.io/jujuba/> — abre direto no celular!
 > (é HTTPS de verdade, então o microfone funciona no iPhone/Android sem configurar nada)
 
-Bichinho virtual estilo *My Talking Tom*, rodando **no browser do celular**. A Jujuba é
-uma raposinha chibi que reage a carinho, come, dorme, e **imita a sua voz** com vozinha
-aguda — igual ao Talking Tom raiz: com o mic ligado ela detecta quando você fala, grava
-e repete. Três cômodos (🍳 cozinha, 🛋️ sala, 🌙 quarto) trocando nas setinhas do topo.
+Bichinho virtual estilo *My Talking Tom*, rodando **no browser do celular**. Uma
+raposinha chibi (você escolhe o nome — padrão Foxy) que reage a carinho, come, dorme,
+**toma banho** e **imita a sua voz** com vozinha aguda — igual ao Talking Tom raiz.
+Quatro cômodos (🍳 cozinha, 🛋️ sala, 🌙 quarto, 🛁 banheiro) nas setinhas do topo.
+Ela vai se sujando com o tempo (manchinhas + barra 🧼) — toque na banheira, esfregue
+com a esponja, enxágue com a ducha e ganhe um jingle de limpinha. ✨
 
 Tudo 3D (Three.js), com o modelo **gerado 100% por script no Blender** (nada de assets
 comprados): malha, ossos, expressões e ícones saem de `blender/*.py`.
@@ -89,5 +91,5 @@ npm run test:e2e   # Playwright + mic FAKE (WAV sintético de fala) — cobre ca
 
 ## Roadmap
 
-v0.3 escovar os dentes + banho (banheiro como 4ª sala) · v0.4 roupinhas + guarda-roupa ·
-v0.5 bolinha + moedas · depois: minigames, modo offline, conversa de verdade via IA.
+v0.4 escovar os dentes (na pia do banheiro!) · v0.5 roupinhas + guarda-roupa ·
+v0.6 bolinha + moedas · depois: minigames, modo offline, conversa de verdade via IA.

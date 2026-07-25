@@ -4,9 +4,9 @@ import type { GameScene, RoomLook } from '../scene'
 import { DEFAULT_LOOK } from '../scene'
 import { asset } from '../utils/assets'
 
-export type RoomId = 'cozinha' | 'sala' | 'quarto'
+export type RoomId = 'cozinha' | 'sala' | 'quarto' | 'banheiro'
 
-export const ROOM_ORDER: RoomId[] = ['cozinha', 'sala', 'quarto']
+export const ROOM_ORDER: RoomId[] = ['cozinha', 'sala', 'quarto', 'banheiro']
 
 export const ROOM_META: Record<RoomId, { label: string; icon: string; look: RoomLook }> = {
   cozinha: {
@@ -32,6 +32,26 @@ export const ROOM_META: Record<RoomId, { label: string; icon: string; look: Room
       rugRim: '#c6b7ee',
     },
   },
+  banheiro: {
+    label: 'Banheiro',
+    icon: '🛁',
+    look: {
+      bgTop: '#e7f7f5',
+      bgBottom: '#bee7e4',
+      floor: '#cfe9e5',
+      rug: '#f1fbfa',
+      rugRim: '#a9dcd7',
+    },
+  },
+}
+
+/** Look do modo banho: vapor clarinho. */
+export const BATH_LOOK: RoomLook = {
+  bgTop: '#f2fcfb',
+  bgBottom: '#cdeef2',
+  floor: '#d8efec',
+  rug: '#f1fbfa',
+  rugRim: '#b9e4df',
 }
 
 export class Rooms {
@@ -65,6 +85,11 @@ export class Rooms {
     this.current = ROOM_ORDER[(i + dir + ROOM_ORDER.length) % ROOM_ORDER.length]
     this.apply()
     return this.current
+  }
+
+  /** Grupo de props da sala atual (modo banho esconde/mostra). */
+  currentGroup(): THREE.Group | undefined {
+    return this.groups.get(this.current)
   }
 
   apply(): void {

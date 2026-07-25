@@ -10,8 +10,10 @@ import { Stats } from './game/state'
 import { setupPointer } from './interactions/pointer'
 import { FeedingSystem } from './interactions/feeding'
 import { VoiceSystem } from './interactions/voice'
+import { BathSystem } from './interactions/bath'
 import { createUI } from './game/ui'
 import { Rooms, type RoomId } from './game/rooms'
+import { DirtLayer } from './fx/dirt'
 import { asset } from './utils/assets'
 
 const DEBUG = import.meta.env.DEV || location.search.includes('debug')
@@ -39,6 +41,8 @@ gs.foxRoot.add(hitProxy)
 const pose = createPoseInput()
 const stats = new Stats()
 const particles = new Particles(gs.scene)
+const dirt = new DirtLayer(gs.scene)
+dirt.setHygiene(stats.hygiene)
 
 let rig: FoxRig | null = null
 let animator: FoxAnimator | null = null
@@ -46,6 +50,7 @@ let expressions: Expressions | null = null
 let behavior: FoxBehavior | null = null
 let feeding: FeedingSystem | null = null
 let voice: VoiceSystem | null = null
+let bath: BathSystem | null = null
 
 const rooms = new Rooms(gs, stats.room as RoomId)
 void rooms.load()
@@ -75,6 +80,8 @@ FoxRig.load(asset('models/jujuba.glb'))
     feeding.onCancel = () => behavior?.enter('IDLE')
     void feeding.preload()
     voice = new VoiceSystem({ behavior, pose })
+    bath = new BathSystem({ gs, rooms, behavior, particles, stats, hitProxy, canvas })
+    void bath.preload()
     const ui = createUI({
       onFoodDragStart(kind, x, y) {
         if (!behavior || !feeding || feeding.active) return false
@@ -111,6 +118,13 @@ FoxRig.load(asset('models/jujuba.glb'))
       onSleepToggle() {
         behavior?.toggleSleep()
       },
+      onBathTool(tool) {
+        bath?.setTool(tool)
+        ui.setBathTool(tool)
+      },
+      onBathExit() {
+        bath?.exit()
+      },
       onFirstTap(name) {
         if (name) {
           stats.name = name
@@ -144,8 +158,11 @@ FoxRig.load(asset('models/jujuba.glb'))
       )
     }
     behavior.onState(syncMicVisual)
-    stats.onChange((s) => ui.updateBars(s.hunger, s.happiness, s.energy))
-    ui.updateBars(stats.hunger, stats.happiness, stats.energy)
+    stats.onChange((s) => {
+      ui.updateBars(s.hunger, s.happiness, s.energy, s.hygiene)
+      dirt.setHygiene(s.hygiene)
+    })
+    ui.updateBars(stats.hunger, stats.happiness, stats.energy, stats.hygiene)
 
     // salas: visual + persistência + mic só na sala de estar
     rooms.onChange = (room) => {
@@ -160,6 +177,13 @@ FoxRig.load(asset('models/jujuba.glb'))
     }
     ui.setRoom(rooms.current, { silent: true })
     rooms.apply()
+
+    // modo banho: UI própria (Voltar + ferramentas)
+    bath.onEnter = () => {
+      ui.setBathMode(true)
+      ui.setBathTool(bath!.tool)
+    }
+    bath.onExit = () => ui.setBathMode(false)
 
     // dormir: filtro noturno + luz baixa (e restaura sono salvo)
     behavior.onState((s) => {
@@ -188,6 +212,7 @@ function tick() {
   if (behavior) behavior.update(dt)
   if (feeding) feeding.update(dt)
   if (voice) voice.update()
+  if (bath) bath.update(dt)
   if (animator) animator.update(dt, pose)
   if (expressions) expressions.update(dt)
   particles.update(dt)
@@ -226,6 +251,10 @@ if (DEBUG) {
       get voice() {
         return voice
       },
+      get bath() {
+        return bath
+      },
+      dirt,
       get elapsed() {
         return elapsed
       },

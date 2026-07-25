@@ -1,6 +1,6 @@
 import * as THREE from 'three'
 
-type Kind = 'heart' | 'crumb' | 'zzz'
+type Kind = 'heart' | 'crumb' | 'zzz' | 'drop'
 
 interface Particle {
   sprite: THREE.Sprite
@@ -50,6 +50,23 @@ function zzzTexture(): THREE.CanvasTexture {
   return t
 }
 
+function dropTexture(): THREE.CanvasTexture {
+  const s = 32
+  const c = document.createElement('canvas')
+  c.width = c.height = s
+  const ctx = c.getContext('2d')!
+  const g = ctx.createRadialGradient(s / 2, s / 2, 1, s / 2, s / 2, s * 0.34)
+  g.addColorStop(0, '#d8f4ff')
+  g.addColorStop(1, '#7fc8e8')
+  ctx.fillStyle = g
+  ctx.beginPath()
+  ctx.arc(s / 2, s / 2, s * 0.3, 0, Math.PI * 2)
+  ctx.fill()
+  const t = new THREE.CanvasTexture(c)
+  t.colorSpace = THREE.SRGBColorSpace
+  return t
+}
+
 function crumbTexture(): THREE.CanvasTexture {
   const s = 32
   const c = document.createElement('canvas')
@@ -75,6 +92,7 @@ export class Particles {
       heart: new THREE.SpriteMaterial({ map: heartTexture(), depthWrite: false, transparent: true }),
       crumb: new THREE.SpriteMaterial({ map: crumbTexture(), depthWrite: false, transparent: true }),
       zzz: new THREE.SpriteMaterial({ map: zzzTexture(), depthWrite: false, transparent: true }),
+      drop: new THREE.SpriteMaterial({ map: dropTexture(), depthWrite: false, transparent: true }),
     }
   }
 
@@ -107,6 +125,10 @@ export class Particles {
         p.maxLife = p.life = 1.8 + Math.random() * 0.4
         p.vel.set(0.14 + Math.random() * 0.08, 0.32 + Math.random() * 0.1, 0.02)
         p.baseScale = 0.07 + Math.random() * 0.04
+      } else if (kind === 'drop') {
+        p.maxLife = p.life = 0.55 + Math.random() * 0.2
+        p.vel.set((Math.random() - 0.5) * 0.5, -0.2 - Math.random() * 0.3, 0.1)
+        p.baseScale = 0.035 + Math.random() * 0.02
       } else {
         p.maxLife = p.life = 0.7 + Math.random() * 0.2
         p.vel.set((Math.random() - 0.5) * 0.9, 0.4 + Math.random() * 0.5, 0.25 + Math.random() * 0.2)
@@ -124,7 +146,7 @@ export class Particles {
         continue
       }
       const k = p.life / p.maxLife // 1 → 0
-      if (p.kind === 'crumb') p.vel.y -= 2.6 * dt // gravidade
+      if (p.kind === 'crumb' || p.kind === 'drop') p.vel.y -= 2.6 * dt // gravidade
       p.sprite.position.addScaledVector(p.vel, dt)
       if (p.kind === 'zzz') p.sprite.position.x += Math.sin(p.life * 5) * 0.05 * dt
       const grow = p.kind === 'heart' ? 1.35 - k * 0.35 : p.kind === 'zzz' ? 1.5 - k * 0.5 : 1
