@@ -89,6 +89,8 @@ FoxRig.load('/models/jujuba.glb')
       )
     }
     behavior.onState(syncMicVisual)
+    stats.onChange((s) => ui.updateBars(s.hunger, s.happiness))
+    ui.updateBars(stats.hunger, stats.happiness)
     if (DEBUG) console.log('[jujuba] rig carregado ✓')
   })
   .catch((err) => console.error('[jujuba] falha carregando modelo:', err))

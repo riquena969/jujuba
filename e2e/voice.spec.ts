@@ -19,6 +19,7 @@ async function waitState(page: Page, state: string, timeout = 12_000): Promise<v
 test('imitar: IDLE → LISTENING → REPLAYING → IDLE com jaw sync', async ({ page }) => {
   await page.goto('/')
   await page.waitForFunction(() => window.__jujuba?.rigReady)
+  await page.locator('.overlay').click() // "Toque para começar"
 
   // liga o mic — o Chromium "fala" o voice.wav pelo dispositivo fake
   await page.getByRole('button', { name: /falar/i }).click()

@@ -117,6 +117,7 @@ export class FoxBehavior {
     pose.lean = petting ? clamp(this.strokeNdcX, -1, 1) : 0
     pose.earsPerk = listening ? 1 : 0
     pose.headTilt = listening ? 0.14 : 0
+    pose.sad = this.deps.stats.hunger < 30 && this.state === 'IDLE' ? 1 : 0
     expressions.smileTarget = petting ? 1 : 0
     expressions.blinkHold = petting
     // jawOpen: escrito pela comida (FeedingSystem) e pela voz (VoiceSystem)

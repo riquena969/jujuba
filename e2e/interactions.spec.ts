@@ -3,6 +3,7 @@ import { test, expect } from '@playwright/test'
 test.beforeEach(async ({ page }) => {
   await page.goto('/')
   await page.waitForFunction(() => window.__jujuba?.rigReady)
+  await page.locator('.overlay').click() // "Toque para começar"
 })
 
 test('carinho: esfregada vira PETTING e sobe a alegria', async ({ page }) => {

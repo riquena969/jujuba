@@ -19,12 +19,14 @@ export interface PoseInput {
   excitement: number
   /** -1..1 — PETTING: inclina o corpo na direção do dedo. */
   lean: number
+  /** 0..1 — tristinha (fome baixa): orelhas murcham, rabo desanima. */
+  sad: number
 }
 
 export function createPoseInput(): PoseInput {
   return {
     gazeX: 0, gazeY: 0, gazeActive: false,
-    jawOpen: 0, earsPerk: 0, headTilt: 0, excitement: 0, lean: 0,
+    jawOpen: 0, earsPerk: 0, headTilt: 0, excitement: 0, lean: 0, sad: 0,
   }
 }
 
@@ -49,6 +51,7 @@ export class FoxAnimator {
   private perkSmooth = 0
   private tiltSmooth = 0
   private leanSmooth = 0
+  private sadSmooth = 0
 
   constructor(private rig: FoxRig) {}
 
@@ -72,10 +75,12 @@ export class FoxAnimator {
     // respiração: 0.25 Hz no peito
     rig.addScale('chest', 0.022 * Math.sin(t * Math.PI * 2 * 0.25))
 
-    // rabo: cadeia com defasagem; excitement acelera e amplia
+    // rabo: cadeia com defasagem; excitement acelera e amplia, tristeza desanima
+    this.sadSmooth = damp(this.sadSmooth, clamp(input.sad, 0, 1), 4, dt)
+    const sad = this.sadSmooth
     const ex = clamp(input.excitement, 0, 1)
-    const wagW = 2.4 + ex * 5
-    const wagA = 0.10 + ex * 0.24
+    const wagW = (2.4 + ex * 5) * (1 - sad * 0.55)
+    const wagA = (0.10 + ex * 0.24) * (1 - sad * 0.6)
     rig.addRotation('tailBase', 'y', Math.sin(t * wagW) * wagA)
     rig.addRotation('tailMid', 'y', Math.sin(t * wagW - 0.45) * wagA * 1.5)
     rig.addRotation('tailTip', 'y', Math.sin(t * wagW - 0.9) * wagA * 2.1)
@@ -131,6 +136,15 @@ export class FoxAnimator {
       rig.addRotation('earR', 'x', -0.22 * p)
       rig.addRotation('earL', 'z', -0.14 * p)
       rig.addRotation('earR', 'z', 0.14 * p)
+    }
+
+    // orelhas murchas de fominha (abrem pros lados e caem pra trás)
+    if (sad > 0.001) {
+      rig.addRotation('earL', 'z', 0.4 * sad)
+      rig.addRotation('earR', 'z', -0.4 * sad)
+      rig.addRotation('earL', 'x', 0.18 * sad)
+      rig.addRotation('earR', 'x', 0.18 * sad)
+      rig.addRotation('head', 'x', 0.06 * sad) // cabecinha baixa
     }
 
     this.tiltSmooth = damp(this.tiltSmooth, input.headTilt, 8, dt)

@@ -18,10 +18,34 @@ export interface UI {
   hideTray(): void
   /** Reflete o estado da voz no botão do mic. */
   setMicVisual(mode: 'off' | 'on' | 'listening' | 'replaying'): void
+  updateBars(hunger: number, happiness: number): void
 }
 
 export function createUI({ onFeed, onMicToggle }: Opts): UI {
   const hud = document.querySelector<HTMLDivElement>('#hud')!
+
+  // ---- overlay de primeiro toque (destrava o áudio no iOS) ----
+  const overlay = document.createElement('div')
+  overlay.className = 'overlay'
+  overlay.innerHTML = `<h1>Jujuba <span>🦊</span></h1><p>Toque para começar</p>`
+  overlay.addEventListener('pointerdown', () => {
+    unlockAudio()
+    overlay.classList.add('overlay-out')
+    setTimeout(() => overlay.remove(), 450)
+  })
+
+  // ---- barras de status ----
+  const bars = document.createElement('div')
+  bars.className = 'hud-bars'
+  const mkBar = (icon: string, label: string) => {
+    const row = document.createElement('div')
+    row.className = 'stat'
+    row.innerHTML = `<span class="stat-icon" title="${label}">${icon}</span><div class="stat-track"><div class="stat-fill"></div></div>`
+    bars.appendChild(row)
+    return row.querySelector<HTMLDivElement>('.stat-fill')!
+  }
+  const hungerFill = mkBar('🍖', 'Fome')
+  const happyFill = mkBar('💛', 'Alegria')
 
   const tray = document.createElement('div')
   tray.className = 'tray'
@@ -64,11 +88,17 @@ export function createUI({ onFeed, onMicToggle }: Opts): UI {
     })
   })
 
-  hud.append(tray, eatBtn, micBtn)
+  hud.append(bars, tray, eatBtn, micBtn, overlay)
 
   return {
     hideTray() {
       tray.hidden = true
+    },
+    updateBars(hunger, happiness) {
+      hungerFill.style.width = `${hunger}%`
+      hungerFill.classList.toggle('stat-low', hunger < 30)
+      happyFill.style.width = `${happiness}%`
+      happyFill.classList.toggle('stat-low', happiness < 30)
     },
     setMicVisual(mode) {
       micBtn.classList.toggle('mic-on', mode !== 'off')
