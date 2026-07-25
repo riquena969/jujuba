@@ -21,12 +21,14 @@ export interface PoseInput {
   lean: number
   /** 0..1 — tristinha (fome baixa): orelhas murcham, rabo desanima. */
   sad: number
+  /** 0..1 — dormindo: cabeça baixa, respiração lenta e profunda, balancinho. */
+  sleep: number
 }
 
 export function createPoseInput(): PoseInput {
   return {
     gazeX: 0, gazeY: 0, gazeActive: false,
-    jawOpen: 0, earsPerk: 0, headTilt: 0, excitement: 0, lean: 0, sad: 0,
+    jawOpen: 0, earsPerk: 0, headTilt: 0, excitement: 0, lean: 0, sad: 0, sleep: 0,
   }
 }
 
@@ -52,6 +54,7 @@ export class FoxAnimator {
   private tiltSmooth = 0
   private leanSmooth = 0
   private sadSmooth = 0
+  private sleepSmooth = 0
 
   constructor(private rig: FoxRig) {}
 
@@ -72,8 +75,11 @@ export class FoxAnimator {
     rig.resetPose()
 
     // ---------- camada base (sempre ativa) ----------
-    // respiração: 0.25 Hz no peito
-    rig.addScale('chest', 0.022 * Math.sin(t * Math.PI * 2 * 0.25))
+    this.sleepSmooth = damp(this.sleepSmooth, clamp(input.sleep, 0, 1), 3, dt)
+    const sleep = this.sleepSmooth
+    // respiração: 0.25 Hz acordada; dormindo fica lenta e funda (0.11 Hz)
+    rig.addScale('chest', 0.022 * (1 - sleep) * Math.sin(t * Math.PI * 2 * 0.25))
+    rig.addScale('chest', 0.05 * sleep * Math.sin(t * Math.PI * 2 * 0.11))
 
     // rabo: cadeia com defasagem; excitement acelera e amplia, tristeza desanima
     this.sadSmooth = damp(this.sadSmooth, clamp(input.sad, 0, 1), 4, dt)
@@ -98,9 +104,21 @@ export class FoxAnimator {
       rig.addRotation(this.twitchSide, 'z', this.twitchSide === 'earL' ? a : -a)
     }
 
-    // ---------- olhar ----------
+    // ---------- dormindo: cabecinha baixa + balancinho gostoso ----------
+    if (sleep > 0.001) {
+      rig.addRotation('head', 'x', 0.3 * sleep)
+      rig.addRotation('root', 'z', Math.sin(t * 0.8) * 0.022 * sleep)
+      rig.addRotation('earL', 'z', 0.24 * sleep)
+      rig.addRotation('earR', 'z', -0.24 * sleep)
+    }
+
+    // ---------- olhar (desligado dormindo) ----------
     let gx = input.gazeX
     let gy = input.gazeY
+    if (sleep > 0.5) {
+      gx = 0
+      gy = 0
+    }
     if (!input.gazeActive) {
       this.nextGlanceIn -= dt
       if (this.nextGlanceIn <= 0) {

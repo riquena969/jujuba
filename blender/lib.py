@@ -91,6 +91,36 @@ def cone(name, r1, r2, depth, loc, scale=(1, 1, 1), rot=(0, 0, 0), material=None
     return _finish(o, name, material, group)
 
 
+def apply_modifiers(obj):
+    bpy.context.view_layer.objects.active = obj
+    for m in list(obj.modifiers):
+        bpy.ops.object.modifier_apply(modifier=m.name)
+
+
+def box(name, size, loc, material=None, group=None, bevel=0.02, rot=(0, 0, 0)):
+    """Caixa com cantos arredondados (bevel aplicado) — look chunky fofo."""
+    bpy.ops.mesh.primitive_cube_add(size=1, location=loc)
+    o = bpy.context.active_object
+    o.scale = size
+    o.rotation_euler = rot
+    bpy.ops.object.transform_apply(scale=True)  # bevel uniforme
+    if bevel:
+        m = o.modifiers.new('Bevel', 'BEVEL')
+        m.width = bevel
+        m.segments = 3
+        apply_modifiers(o)
+    return _finish(o, name, material, group)
+
+
+def cylinder(name, radius, depth, loc, material=None, group=None, rot=(0, 0, 0),
+             vertices=20):
+    bpy.ops.mesh.primitive_cylinder_add(vertices=vertices, radius=radius, depth=depth,
+                                        location=loc)
+    o = bpy.context.active_object
+    o.rotation_euler = rot
+    return _finish(o, name, material, group)
+
+
 def join(objs, name):
     """Junta objs no primeiro, baka transforms e dá shade smooth."""
     bpy.ops.object.select_all(action='DESELECT')

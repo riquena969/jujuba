@@ -1,6 +1,6 @@
 import * as THREE from 'three'
 
-type Kind = 'heart' | 'crumb'
+type Kind = 'heart' | 'crumb' | 'zzz'
 
 interface Particle {
   sprite: THREE.Sprite
@@ -32,6 +32,24 @@ function heartTexture(): THREE.CanvasTexture {
   return t
 }
 
+function zzzTexture(): THREE.CanvasTexture {
+  const s = 64
+  const c = document.createElement('canvas')
+  c.width = c.height = s
+  const ctx = c.getContext('2d')!
+  ctx.font = '900 46px system-ui, sans-serif'
+  ctx.textAlign = 'center'
+  ctx.textBaseline = 'middle'
+  ctx.fillStyle = '#8b7ae0'
+  ctx.strokeStyle = '#ffffff'
+  ctx.lineWidth = 6
+  ctx.strokeText('Z', s / 2, s / 2 + 2)
+  ctx.fillText('Z', s / 2, s / 2 + 2)
+  const t = new THREE.CanvasTexture(c)
+  t.colorSpace = THREE.SRGBColorSpace
+  return t
+}
+
 function crumbTexture(): THREE.CanvasTexture {
   const s = 32
   const c = document.createElement('canvas')
@@ -56,6 +74,7 @@ export class Particles {
     this.materials = {
       heart: new THREE.SpriteMaterial({ map: heartTexture(), depthWrite: false, transparent: true }),
       crumb: new THREE.SpriteMaterial({ map: crumbTexture(), depthWrite: false, transparent: true }),
+      zzz: new THREE.SpriteMaterial({ map: zzzTexture(), depthWrite: false, transparent: true }),
     }
   }
 
@@ -84,6 +103,10 @@ export class Particles {
         p.maxLife = p.life = 1.1 + Math.random() * 0.3
         p.vel.set((Math.random() - 0.5) * 0.25, 0.55 + Math.random() * 0.25, 0.05)
         p.baseScale = 0.09 + Math.random() * 0.05
+      } else if (kind === 'zzz') {
+        p.maxLife = p.life = 1.8 + Math.random() * 0.4
+        p.vel.set(0.14 + Math.random() * 0.08, 0.32 + Math.random() * 0.1, 0.02)
+        p.baseScale = 0.07 + Math.random() * 0.04
       } else {
         p.maxLife = p.life = 0.7 + Math.random() * 0.2
         p.vel.set((Math.random() - 0.5) * 0.9, 0.4 + Math.random() * 0.5, 0.25 + Math.random() * 0.2)
@@ -103,7 +126,8 @@ export class Particles {
       const k = p.life / p.maxLife // 1 → 0
       if (p.kind === 'crumb') p.vel.y -= 2.6 * dt // gravidade
       p.sprite.position.addScaledVector(p.vel, dt)
-      const grow = p.kind === 'heart' ? 1.35 - k * 0.35 : 1
+      if (p.kind === 'zzz') p.sprite.position.x += Math.sin(p.life * 5) * 0.05 * dt
+      const grow = p.kind === 'heart' ? 1.35 - k * 0.35 : p.kind === 'zzz' ? 1.5 - k * 0.5 : 1
       p.sprite.scale.setScalar(p.baseScale * grow)
       p.sprite.material.opacity = Math.min(1, k * 3)
     }

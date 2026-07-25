@@ -11,6 +11,7 @@ import { setupPointer } from './interactions/pointer'
 import { FeedingSystem } from './interactions/feeding'
 import { VoiceSystem } from './interactions/voice'
 import { createUI } from './game/ui'
+import { Rooms, type RoomId } from './game/rooms'
 
 const DEBUG = import.meta.env.DEV || location.search.includes('debug')
 
@@ -45,12 +46,15 @@ let behavior: FoxBehavior | null = null
 let feeding: FeedingSystem | null = null
 let voice: VoiceSystem | null = null
 
+const rooms = new Rooms(gs, stats.room as RoomId)
+void rooms.load()
+
 FoxRig.load('/models/jujuba.glb')
   .then((loaded) => {
     rig = loaded
     animator = new FoxAnimator(loaded)
     expressions = new Expressions(loaded)
-    behavior = new FoxBehavior({ animator, expressions, particles, stats, pose })
+    behavior = new FoxBehavior({ rig: loaded, animator, expressions, particles, stats, pose })
     gs.foxRoot.remove(placeholder)
     placeholder.geometry.dispose()
     gs.foxRoot.add(loaded.root)
@@ -96,6 +100,13 @@ FoxRig.load('/models/jujuba.glb')
         syncMicVisual()
         return voice.enabled
       },
+      onRoomChange(dir) {
+        if (behavior?.state === 'SLEEPING') return // acorda primeiro
+        rooms.go(dir)
+      },
+      onSleepToggle() {
+        behavior?.toggleSleep()
+      },
     })
     const syncMicVisual = () => {
       if (!voice || !behavior) return
@@ -110,8 +121,30 @@ FoxRig.load('/models/jujuba.glb')
       )
     }
     behavior.onState(syncMicVisual)
-    stats.onChange((s) => ui.updateBars(s.hunger, s.happiness))
-    ui.updateBars(stats.hunger, stats.happiness)
+    stats.onChange((s) => ui.updateBars(s.hunger, s.happiness, s.energy))
+    ui.updateBars(stats.hunger, stats.happiness, stats.energy)
+
+    // salas: visual + persistência + mic só na sala de estar
+    rooms.onChange = (room) => {
+      stats.room = room
+      stats.save()
+      ui.setRoom(room)
+      if (room !== 'sala' && voice?.enabled) {
+        voice.disable()
+        syncMicVisual()
+      }
+    }
+    ui.setRoom(rooms.current, { silent: true })
+    rooms.apply()
+
+    // dormir: filtro noturno + luz baixa (e restaura sono salvo)
+    behavior.onState((s) => {
+      const sleeping = s === 'SLEEPING'
+      ui.setSleeping(sleeping)
+      gs.setDim(sleeping ? 1 : 0)
+    })
+    if (stats.sleeping) behavior.enter('SLEEPING')
+
     if (DEBUG) console.log('[jujuba] rig carregado ✓')
   })
   .catch((err) => console.error('[jujuba] falha carregando modelo:', err))
@@ -126,6 +159,7 @@ function tick() {
   last = now
   elapsed += dt
 
+  if (behavior) stats.sleeping = behavior.state === 'SLEEPING'
   stats.update(dt)
   if (behavior) behavior.update(dt)
   if (feeding) feeding.update(dt)

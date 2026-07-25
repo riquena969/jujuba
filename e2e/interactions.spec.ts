@@ -41,12 +41,12 @@ test('poke: tap rápido vira POKED e volta pro IDLE', async ({ page }) => {
   await page.waitForFunction(() => window.__jujuba.state === 'IDLE')
 })
 
-test('comer (tap): bandeja → voo automático → EATING → fome +30 → IDLE', async ({ page }) => {
+test('comer (tap): roleta → voo automático → EATING → fome +30 → IDLE', async ({ page }) => {
   await page.evaluate(() => {
     window.__jujuba.stats.hunger = 40
   })
-  await page.getByRole('button', { name: /comer/i }).click()
-  // tap rapidinho no biscoito = voo automático até a boca
+  await page.locator('.room-prev').click() // sala → cozinha
+  // tap rapidinho no item central da roleta = voo automático até a boca
   await page.evaluate(async () => {
     const btn = document.querySelector('.food-btn')!
     const r = btn.getBoundingClientRect()

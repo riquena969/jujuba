@@ -182,48 +182,146 @@ body {
   }
 }
 
-.tray[hidden] {
+/* ---- Roleta de comidas (cozinha) ---- */
+.carousel[hidden] {
   display: none;
 }
 
-.tray {
+.carousel {
   pointer-events: auto;
   position: absolute;
-  left: 16px;
-  bottom: calc(84px + env(safe-area-inset-bottom, 0px));
+  left: 50%;
+  transform: translateX(-50%);
+  bottom: calc(14px + env(safe-area-inset-bottom, 0px));
   display: flex;
-  gap: 10px;
-  padding: 10px;
-  border-radius: 24px;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 16px;
+  border-radius: 28px;
   background: rgba(255, 255, 255, 0.82);
   box-shadow: 0 6px 18px rgba(146, 82, 58, 0.25);
-  animation: tray-pop 0.16s ease;
 }
 
-@keyframes tray-pop {
-  from {
-    transform: translateY(8px) scale(0.92);
-    opacity: 0;
-  }
-}
-
-.food-btn {
-  width: 64px;
-  height: 64px;
+.car-side,
+.car-center {
   border: none;
   border-radius: 18px;
   background: #fff4e8;
   cursor: pointer;
   padding: 4px;
-  transition: transform 0.12s ease;
+  transition: transform 0.15s ease, opacity 0.15s ease;
 }
 
-.food-btn:active {
-  transform: scale(0.9);
+.car-side {
+  width: 52px;
+  height: 52px;
+  opacity: 0.55;
+  transform: scale(0.92);
 }
 
-.food-btn img {
+.car-center {
+  width: 76px;
+  height: 76px;
+  box-shadow: 0 3px 10px rgba(146, 82, 58, 0.28);
+}
+
+.car-center:active {
+  transform: scale(0.92);
+}
+
+.car-side img,
+.car-center img {
   width: 100%;
   height: 100%;
   object-fit: contain;
+  pointer-events: none;
+}
+
+/* ---- Navegação de salas ---- */
+.room-nav {
+  pointer-events: auto;
+  position: absolute;
+  top: calc(12px + env(safe-area-inset-top, 0px));
+  right: 12px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px;
+  border-radius: 22px;
+  background: rgba(255, 255, 255, 0.7);
+  box-shadow: 0 4px 12px rgba(146, 82, 58, 0.2);
+}
+
+.room-arrow {
+  width: 40px;
+  height: 40px;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  font-size: 26px;
+  font-weight: 800;
+  color: #a85b2f;
+  cursor: pointer;
+  line-height: 1;
+  padding-bottom: 4px;
+}
+
+.room-arrow:active {
+  background: #ffe6d2;
+}
+
+.room-arrow:disabled {
+  opacity: 0.35;
+}
+
+.room-icon {
+  font-size: 22px;
+  min-width: 28px;
+  text-align: center;
+}
+
+.room-toast {
+  position: absolute;
+  top: calc(72px + env(safe-area-inset-top, 0px));
+  left: 50%;
+  transform: translateX(-50%) translateY(-6px);
+  padding: 8px 18px;
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.88);
+  box-shadow: 0 4px 14px rgba(146, 82, 58, 0.22);
+  font-size: 16px;
+  font-weight: 800;
+  color: #a85b2f;
+  opacity: 0;
+  transition: opacity 0.25s ease, transform 0.25s ease;
+}
+
+.room-toast-show {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
+/* ---- Dormir ---- */
+.btn-sleep {
+  left: 50%;
+  transform: translateX(-50%);
+  bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+}
+
+.btn-sleep:active {
+  transform: translateX(-50%) scale(0.93);
+}
+
+.night {
+  position: absolute;
+  inset: 0;
+  background: #191247;
+  opacity: 0;
+  transition: opacity 0.8s ease;
+  pointer-events: none;
+  z-index: 5;
+}
+
+.night-on {
+  opacity: 0.38;
 }

@@ -4,7 +4,7 @@ import { test, expect, type Page } from '@playwright/test'
 const MOUTH = { x: 195, y: 358 }
 
 async function startDrag(page: Page): Promise<void> {
-  await page.getByRole('button', { name: /comer/i }).click()
+  await page.locator('.room-prev').click() // sala → cozinha
   await page.evaluate(() => {
     const btn = document.querySelector('.food-btn')!
     const r = btn.getBoundingClientRect()

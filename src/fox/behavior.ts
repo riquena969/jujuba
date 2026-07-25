@@ -1,9 +1,10 @@
 import * as THREE from 'three'
 import type { FoxAnimator, PoseInput } from './animations'
 import type { Expressions } from './expressions'
+import type { FoxRig } from './rig'
 import type { Particles } from '../fx/particles'
 import type { Stats } from '../game/state'
-import { Purr, squeak } from '../audio/sfx'
+import { Purr, squeak, pop } from '../audio/sfx'
 import { clamp } from '../utils/math'
 
 export type FoxState =
@@ -14,8 +15,10 @@ export type FoxState =
   | 'EATING'
   | 'LISTENING'
   | 'REPLAYING'
+  | 'SLEEPING'
 
 interface Deps {
+  rig: FoxRig
   animator: FoxAnimator
   expressions: Expressions
   particles: Particles
@@ -31,6 +34,8 @@ export class FoxBehavior {
   private strokePoint = new THREE.Vector3()
   private strokeNdcX = 0
   private heartTimer = 0
+  private zzzTimer = 0
+  private zzzPoint = new THREE.Vector3()
   private purr = new Purr()
   private stateListeners: ((s: FoxState) => void)[] = []
 
@@ -40,9 +45,14 @@ export class FoxBehavior {
     this.stateListeners.push(fn)
   }
 
-  /** EATING, REPLAYING e DRAGGING não podem ser atropelados por carinho/poke. */
+  /** EATING, REPLAYING, DRAGGING e SLEEPING não caem em carinho/poke comum. */
   private canInterrupt(): boolean {
-    return this.state !== 'EATING' && this.state !== 'REPLAYING' && this.state !== 'DRAGGING'
+    return (
+      this.state !== 'EATING' &&
+      this.state !== 'REPLAYING' &&
+      this.state !== 'DRAGGING' &&
+      this.state !== 'SLEEPING'
+    )
   }
 
   enter(next: FoxState): void {
@@ -74,8 +84,24 @@ export class FoxBehavior {
   }
 
   poke(): void {
+    if (this.state === 'SLEEPING') {
+      this.wake()
+      return
+    }
     if (this.state !== 'IDLE') return
     this.enter('POKED')
+  }
+
+  /** Botão Dormir/Acordar do quarto. */
+  toggleSleep(): void {
+    if (this.state === 'SLEEPING') this.wake()
+    else if (this.canInterrupt()) this.enter('SLEEPING')
+  }
+
+  private wake(): void {
+    this.enter('IDLE')
+    this.deps.animator.bounce() // espreguiçada
+    pop()
   }
 
   /** Começo do arrasto de comida. true = pode (main dispara o FeedingSystem). */
@@ -115,6 +141,18 @@ export class FoxBehavior {
         // trava de segurança (worklet limita em 10 s)
         if (this.stateT > 12) this.enter('IDLE')
         break
+      case 'SLEEPING': {
+        this.zzzTimer -= dt
+        if (this.zzzTimer <= 0) {
+          this.zzzTimer = 1.3
+          this.deps.rig.headWorld(this.zzzPoint)
+          this.zzzPoint.x += 0.22
+          this.zzzPoint.y += 0.18
+          this.zzzPoint.z += 0.1
+          particles.spawn('zzz', this.zzzPoint)
+        }
+        break
+      }
       default:
         break
     }
@@ -125,6 +163,7 @@ export class FoxBehavior {
     const listening = this.state === 'LISTENING'
     const replaying = this.state === 'REPLAYING'
     const dragging = this.state === 'DRAGGING'
+    const sleeping = this.state === 'SLEEPING'
     pose.excitement =
       petting ? 0.95 : eating ? 0.7 : dragging ? 0.55 : replaying ? 0.5 : listening ? 0.3 : 0
     pose.lean = petting
@@ -134,9 +173,15 @@ export class FoxBehavior {
         : 0
     pose.earsPerk = listening ? 1 : 0
     pose.headTilt = listening ? 0.14 : 0
-    pose.sad = this.deps.stats.hunger < 30 && this.state === 'IDLE' ? 1 : 0
+    pose.sleep = sleeping ? 1 : 0
+    pose.sad =
+      this.deps.stats.hunger < 30 && this.state === 'IDLE'
+        ? 1
+        : this.deps.stats.energy < 25 && this.state === 'IDLE'
+          ? 0.7 // soninho também murcha as orelhas
+          : 0
     expressions.smileTarget = petting ? 1 : 0
-    expressions.blinkHold = petting
+    expressions.blinkHold = petting || sleeping
     // jawOpen: escrito pela comida (FeedingSystem) e pela voz (VoiceSystem)
   }
 }

@@ -1,5 +1,13 @@
 import * as THREE from 'three'
 
+export interface RoomLook {
+  bgTop: string
+  bgBottom: string
+  floor: string
+  rug: string
+  rugRim: string
+}
+
 export interface GameScene {
   renderer: THREE.WebGLRenderer
   scene: THREE.Scene
@@ -7,15 +15,21 @@ export interface GameScene {
   /** Âncora da raposa — o modelo (ou placeholder) entra aqui, pés no y=0. */
   foxRoot: THREE.Group
   resize(): void
+  /** Troca cores de fundo/chão/tapete (visual da sala atual). */
+  setRoomLook(look: RoomLook): void
+  /** 0 = dia, 1 = luz apagada (dormindo). */
+  setDim(k: number): void
 }
 
-const PALETTE = {
+const SHADOW = 'rgba(146, 82, 58, 0.32)'
+
+/** Look padrão (sala de estar). */
+export const DEFAULT_LOOK: RoomLook = {
   bgTop: '#ffeeda',
   bgBottom: '#ffcfae',
   floor: '#f6c9a4',
-  rugRim: '#f9b9a0',
   rug: '#fff3e6',
-  shadow: 'rgba(146, 82, 58, 0.32)',
+  rugRim: '#f9b9a0',
 }
 
 /** Altura da raposa em unidades de mundo — contrato com o modelo do Blender. */
@@ -42,7 +56,7 @@ function blobShadowTexture(): THREE.CanvasTexture {
   c.width = c.height = s
   const ctx = c.getContext('2d')!
   const g = ctx.createRadialGradient(s / 2, s / 2, 0, s / 2, s / 2, s / 2)
-  g.addColorStop(0, PALETTE.shadow)
+  g.addColorStop(0, SHADOW)
   g.addColorStop(0.55, 'rgba(146, 82, 58, 0.16)')
   g.addColorStop(1, 'rgba(146, 82, 58, 0)')
   ctx.fillStyle = g
@@ -57,38 +71,34 @@ export function createScene(canvas: HTMLCanvasElement): GameScene {
   // Sem shadow maps: sombra é um blob fake (barato pra mobile).
 
   const scene = new THREE.Scene()
-  scene.background = gradientTexture(PALETTE.bgTop, PALETTE.bgBottom)
+  scene.background = gradientTexture(DEFAULT_LOOK.bgTop, DEFAULT_LOOK.bgBottom)
   // Fog na cor do fundo funde o chão com o backdrop (sem linha de horizonte dura)
-  scene.fog = new THREE.Fog(PALETTE.bgBottom, 5, 16)
+  scene.fog = new THREE.Fog(DEFAULT_LOOK.bgBottom, 5, 16)
 
   // ---- Luzes: 3 pontos suaves, clima pastel ----
-  scene.add(new THREE.HemisphereLight('#fff6e8', '#ffc09a', 0.9))
+  const hemi = new THREE.HemisphereLight('#fff6e8', '#ffc09a', 0.9)
   const key = new THREE.DirectionalLight('#fff4ea', 1.7)
   key.position.set(2.5, 4, 3)
   const fill = new THREE.DirectionalLight('#ffdff0', 0.55)
   fill.position.set(-3, 2, 2.5)
   const rim = new THREE.DirectionalLight('#ffffff', 0.5)
   rim.position.set(0, 3.5, -4)
-  scene.add(key, fill, rim)
+  scene.add(hemi, key, fill, rim)
+  const lights = [hemi, key, fill, rim]
+  const baseIntensity = lights.map((l) => l.intensity)
 
   // ---- Quarto: chão + tapete redondo ----
-  const floor = new THREE.Mesh(
-    new THREE.PlaneGeometry(40, 40),
-    new THREE.MeshStandardMaterial({ color: PALETTE.floor, roughness: 1 }),
-  )
+  const floorMat = new THREE.MeshStandardMaterial({ color: DEFAULT_LOOK.floor, roughness: 1 })
+  const floor = new THREE.Mesh(new THREE.PlaneGeometry(40, 40), floorMat)
   floor.rotation.x = -Math.PI / 2
   scene.add(floor)
 
-  const rugRim = new THREE.Mesh(
-    new THREE.CircleGeometry(1.55, 48),
-    new THREE.MeshStandardMaterial({ color: PALETTE.rugRim, roughness: 1 }),
-  )
+  const rugRimMat = new THREE.MeshStandardMaterial({ color: DEFAULT_LOOK.rugRim, roughness: 1 })
+  const rugRim = new THREE.Mesh(new THREE.CircleGeometry(1.55, 48), rugRimMat)
   rugRim.rotation.x = -Math.PI / 2
   rugRim.position.y = 0.004
-  const rug = new THREE.Mesh(
-    new THREE.CircleGeometry(1.38, 48),
-    new THREE.MeshStandardMaterial({ color: PALETTE.rug, roughness: 1 }),
-  )
+  const rugMat = new THREE.MeshStandardMaterial({ color: DEFAULT_LOOK.rug, roughness: 1 })
+  const rug = new THREE.Mesh(new THREE.CircleGeometry(1.38, 48), rugMat)
   rug.rotation.x = -Math.PI / 2
   rug.position.y = 0.008
   scene.add(rugRim, rug)
@@ -124,5 +134,21 @@ export function createScene(canvas: HTMLCanvasElement): GameScene {
   }
   resize()
 
-  return { renderer, scene, camera, foxRoot, resize }
+  function setRoomLook(look: RoomLook) {
+    const old = scene.background as THREE.Texture | null
+    scene.background = gradientTexture(look.bgTop, look.bgBottom)
+    old?.dispose()
+    ;(scene.fog as THREE.Fog).color.set(look.bgBottom)
+    floorMat.color.set(look.floor)
+    rugMat.color.set(look.rug)
+    rugRimMat.color.set(look.rugRim)
+  }
+
+  function setDim(k: number) {
+    lights.forEach((l, i) => {
+      l.intensity = baseIntensity[i] * (1 - 0.72 * k)
+    })
+  }
+
+  return { renderer, scene, camera, foxRoot, resize, setRoomLook, setDim }
 }

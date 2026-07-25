@@ -3,11 +3,17 @@ import { clamp } from '../utils/math'
 const KEY = 'jujuba:v1'
 const HUNGER_DECAY_PER_S = 100 / (10 * 3600) // -100 em 10h
 const HAPPY_DECAY_PER_S = 100 / (16 * 3600) // -100 em 16h
+const ENERGY_DECAY_PER_S = 100 / (14 * 3600) // -100 em 14h acordada
+const SLEEP_REGEN_PER_S = 100 / 40 // dormindo com o jogo aberto: cheia em 40s
+const SLEEP_REGEN_OFFLINE_PER_S = 100 / (6 * 3600) // dormindo offline: cheia em 6h
 
 export interface StatsData {
   version: 1
   hunger: number
   happiness: number
+  energy?: number
+  room?: string
+  sleeping?: boolean
   lastSeen: number
 }
 
@@ -16,6 +22,11 @@ type Listener = (s: Stats) => void
 export class Stats {
   hunger = 80
   happiness = 80
+  energy = 80
+  /** Sala atual (persistida). */
+  room = 'sala'
+  /** Sincronizado pelo main com o estado SLEEPING (persistido). */
+  sleeping = false
   private saveTimer: ReturnType<typeof setTimeout> | undefined
   private listeners: Listener[] = []
 
@@ -35,10 +46,18 @@ export class Stats {
       if (d.version !== 1 || typeof d.hunger !== 'number') return
       this.hunger = clamp(d.hunger, 0, 100)
       this.happiness = clamp(d.happiness, 0, 100)
-      // decay offline desde a última visita
+      this.energy = clamp(d.energy ?? 80, 0, 100)
+      this.room = typeof d.room === 'string' ? d.room : 'sala'
+      this.sleeping = d.sleeping === true
+      // decay offline desde a última visita (dormindo: energia REGENERA)
       const away = Math.max(0, (Date.now() - d.lastSeen) / 1000)
       this.hunger = clamp(this.hunger - away * HUNGER_DECAY_PER_S, 0, 100)
       this.happiness = clamp(this.happiness - away * HAPPY_DECAY_PER_S, 0, 100)
+      this.energy = clamp(
+        this.energy + away * (this.sleeping ? SLEEP_REGEN_OFFLINE_PER_S : -ENERGY_DECAY_PER_S),
+        0,
+        100,
+      )
     } catch {
       /* storage indisponível/corrompido: segue com defaults */
     }
@@ -50,6 +69,9 @@ export class Stats {
         version: 1,
         hunger: this.hunger,
         happiness: this.happiness,
+        energy: this.energy,
+        room: this.room,
+        sleeping: this.sleeping,
         lastSeen: Date.now(),
       }
       localStorage.setItem(KEY, JSON.stringify(d))
@@ -83,12 +105,30 @@ export class Stats {
     this.emit()
   }
 
-  /** Decay contínuo enquanto o jogo roda. */
+  addEnergy(v: number): void {
+    this.energy = clamp(this.energy + v, 0, 100)
+    this.scheduleSave()
+    this.emit()
+  }
+
+  /** Decay contínuo enquanto o jogo roda (dormindo: energia regenera). */
   update(dt: number): void {
     const h0 = Math.round(this.hunger)
     const a0 = Math.round(this.happiness)
+    const e0 = Math.round(this.energy)
     this.hunger = clamp(this.hunger - HUNGER_DECAY_PER_S * dt, 0, 100)
     this.happiness = clamp(this.happiness - HAPPY_DECAY_PER_S * dt, 0, 100)
-    if (Math.round(this.hunger) !== h0 || Math.round(this.happiness) !== a0) this.emit()
+    this.energy = clamp(
+      this.energy + dt * (this.sleeping ? SLEEP_REGEN_PER_S : -ENERGY_DECAY_PER_S),
+      0,
+      100,
+    )
+    if (
+      Math.round(this.hunger) !== h0 ||
+      Math.round(this.happiness) !== a0 ||
+      Math.round(this.energy) !== e0
+    ) {
+      this.emit()
+    }
   }
 }
