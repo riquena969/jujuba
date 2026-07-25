@@ -1,9 +1,9 @@
 import { test, expect } from '@playwright/test'
+import { startGame } from './helpers'
 
 test.beforeEach(async ({ page }) => {
   await page.goto('/')
-  await page.waitForFunction(() => window.__jujuba?.rigReady)
-  await page.locator('.overlay').click()
+  await startGame(page)
 })
 
 test('salas: setinhas trocam, cada sala mostra seus controles', async ({ page }) => {
@@ -86,7 +86,6 @@ test('sala persiste entre visitas', async ({ page }) => {
   await page.locator('.room-prev').click() // cozinha
   await page.waitForTimeout(200)
   await page.reload()
-  await page.waitForFunction(() => window.__jujuba?.rigReady)
-  await page.locator('.overlay').click()
+  await startGame(page)
   await expect(page.locator('.carousel')).toBeVisible() // ainda na cozinha
 })

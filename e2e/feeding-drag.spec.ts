@@ -1,4 +1,5 @@
 import { test, expect, type Page } from '@playwright/test'
+import { startGame } from './helpers'
 
 // A boca fica em ~(195, 358) na viewport 390×844 (centro do rosto).
 const MOUTH = { x: 195, y: 358 }
@@ -42,8 +43,7 @@ function dragUp(page: Page, x: number, y: number): Promise<void> {
 
 test.beforeEach(async ({ page }) => {
   await page.goto('/')
-  await page.waitForFunction(() => window.__jujuba?.rigReady)
-  await page.locator('.overlay').click()
+  await startGame(page)
 })
 
 test('arrastar até a boca: boca-imã abre e abocanha, fome +30', async ({ page }) => {

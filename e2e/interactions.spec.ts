@@ -1,9 +1,9 @@
 import { test, expect } from '@playwright/test'
+import { startGame } from './helpers'
 
 test.beforeEach(async ({ page }) => {
   await page.goto('/')
-  await page.waitForFunction(() => window.__jujuba?.rigReady)
-  await page.locator('.overlay').click() // "Toque para começar"
+  await startGame(page)
 })
 
 test('carinho: esfregada vira PETTING e sobe a alegria', async ({ page }) => {

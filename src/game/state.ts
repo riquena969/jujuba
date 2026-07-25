@@ -16,6 +16,9 @@ export interface StatsData {
   sleeping?: boolean
   /** Usuário desligou o mic na mão → não religar sozinho ao entrar na sala. */
   micUserOff?: boolean
+  /** Nome da raposinha (padrão Foxy) e se já foi batizada. */
+  name?: string
+  named?: boolean
   lastSeen: number
 }
 
@@ -31,6 +34,9 @@ export class Stats {
   sleeping = false
   /** Preferência: mic desligado manualmente não religa sozinho. */
   micUserOff = false
+  /** Nome da raposinha; `named` = usuário já escolheu (senão pergunta no boot). */
+  name = 'Foxy'
+  named = false
   private saveTimer: ReturnType<typeof setTimeout> | undefined
   private listeners: Listener[] = []
 
@@ -54,6 +60,8 @@ export class Stats {
       this.room = typeof d.room === 'string' ? d.room : 'sala'
       this.sleeping = d.sleeping === true
       this.micUserOff = d.micUserOff === true
+      this.name = typeof d.name === 'string' && d.name.trim() ? d.name.trim() : 'Foxy'
+      this.named = d.named === true
       // decay offline desde a última visita (dormindo: energia REGENERA)
       const away = Math.max(0, (Date.now() - d.lastSeen) / 1000)
       this.hunger = clamp(this.hunger - away * HUNGER_DECAY_PER_S, 0, 100)
@@ -78,6 +86,8 @@ export class Stats {
         room: this.room,
         sleeping: this.sleeping,
         micUserOff: this.micUserOff,
+        name: this.name,
+        named: this.named,
         lastSeen: Date.now(),
       }
       localStorage.setItem(KEY, JSON.stringify(d))

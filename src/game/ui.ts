@@ -15,8 +15,12 @@ interface Opts {
   /** Setinhas de sala: -1 anterior, +1 próxima. */
   onRoomChange: (dir: 1 | -1) => void
   onSleepToggle: () => void
-  /** Primeiro toque (overlay "Toque para começar") — gesto que destrava áudio/mic. */
-  onFirstTap: () => void
+  /** Primeiro toque/batismo — gesto que destrava áudio/mic. name vem do form. */
+  onFirstTap: (name?: string) => void
+  /** Nome atual da raposinha (mostrado no overlay de retorno). */
+  petName: string
+  /** true = ainda sem nome → overlay vira formulário de batismo. */
+  firstRun: boolean
 }
 
 const FOOD_LABELS: Record<FoodKind, string> = {
@@ -41,19 +45,48 @@ export function createUI({
   onRoomChange,
   onSleepToggle,
   onFirstTap,
+  petName,
+  firstRun,
 }: Opts): UI {
   const hud = document.querySelector<HTMLDivElement>('#hud')!
 
-  // ---- overlay de primeiro toque (destrava o áudio no iOS) ----
+  // ---- overlay de boas-vindas (destrava o áudio no iOS) ----
   const overlay = document.createElement('div')
   overlay.className = 'overlay'
-  overlay.innerHTML = `<h1>Jujuba <span>🦊</span></h1><p>Toque para começar</p>`
-  overlay.addEventListener('pointerdown', () => {
+  const dismissOverlay = (name?: string) => {
     unlockAudio()
     overlay.classList.add('overlay-out')
     setTimeout(() => overlay.remove(), 450)
-    onFirstTap()
-  })
+    onFirstTap(name)
+  }
+
+  if (firstRun) {
+    // batismo: pergunta o nome da raposinha
+    overlay.innerHTML = `<h1><span>🦊</span></h1><p>Como sua raposinha vai se chamar?</p>`
+    const input = document.createElement('input')
+    input.className = 'overlay-input'
+    input.value = 'Foxy'
+    input.maxLength = 16
+    input.autocomplete = 'off'
+    input.setAttribute('aria-label', 'Nome da raposinha')
+    const start = document.createElement('button')
+    start.className = 'overlay-start'
+    start.textContent = 'Começar!'
+    const submit = () => dismissOverlay(input.value.trim() || 'Foxy')
+    start.addEventListener('click', submit)
+    input.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') submit()
+    })
+    input.addEventListener('focus', () => input.select())
+    overlay.append(input, start)
+  } else {
+    const h1 = document.createElement('h1')
+    h1.append(`${petName} `, Object.assign(document.createElement('span'), { textContent: '🦊' }))
+    const p = document.createElement('p')
+    p.textContent = 'Toque para começar'
+    overlay.append(h1, p)
+    overlay.addEventListener('pointerdown', () => dismissOverlay())
+  }
 
   // ---- filtro noturno (dormindo) ----
   const night = document.createElement('div')

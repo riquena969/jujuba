@@ -111,10 +111,19 @@ FoxRig.load(asset('models/jujuba.glb'))
       onSleepToggle() {
         behavior?.toggleSleep()
       },
-      onFirstTap() {
+      onFirstTap(name) {
+        if (name) {
+          stats.name = name
+          stats.named = true
+          stats.save()
+        }
+        document.title = `${stats.name} 🦊`
         tryAutoMic()
       },
+      petName: stats.name,
+      firstRun: !stats.named,
     })
+    if (stats.named) document.title = `${stats.name} 🦊`
 
     // na sala de estar o mic liga sozinho (a não ser que o usuário o desligue)
     const tryAutoMic = () => {

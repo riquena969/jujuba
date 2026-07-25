@@ -167,6 +167,46 @@ body {
   pointer-events: none;
 }
 
+.overlay-input {
+  pointer-events: auto;
+  width: min(240px, 70vw);
+  padding: 12px 18px;
+  border: 3px solid #f4b183;
+  border-radius: 22px;
+  background: rgba(255, 255, 255, 0.92);
+  font-family: inherit;
+  font-size: 20px; /* ≥16px: evita o zoom automático do iOS */
+  font-weight: 700;
+  text-align: center;
+  color: #7a4a32;
+  outline: none;
+}
+
+.overlay-input:focus {
+  border-color: #ff8a3d;
+}
+
+.overlay-start {
+  pointer-events: auto;
+  margin-top: 4px;
+  min-height: 54px;
+  padding: 0 34px;
+  border: none;
+  border-radius: 27px;
+  background: linear-gradient(180deg, #ffa45c, #ff8a3d);
+  box-shadow: 0 6px 16px rgba(200, 100, 40, 0.4);
+  font-family: inherit;
+  font-size: 19px;
+  font-weight: 800;
+  color: #fff;
+  cursor: pointer;
+  transition: transform 0.12s ease;
+}
+
+.overlay-start:active {
+  transform: scale(0.94);
+}
+
 .btn-mic.mic-on {
   background: #ffe1ee;
 }
