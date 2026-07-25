@@ -11,3 +11,4 @@ e2e/fixtures/voice.wav
 .playwright-mcp/
 *.blend
 *.blend1
+.claude/
