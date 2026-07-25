@@ -4,20 +4,29 @@ import type { FoxBehavior } from '../fox/behavior'
 import type { PoseInput } from '../fox/animations'
 import type { Particles } from '../fx/particles'
 import type { Stats } from '../game/state'
-import { Rooms } from '../game/rooms'
+import { Rooms, BUBBLE_LOOK, ROOM_META } from '../game/rooms'
 import { blub, bubblePop, roundUp, deflate, sparkle, pop } from '../audio/sfx'
 import { clamp } from '../utils/math'
 
-/** Minigame das bolhas de sabão: tap no assoprador inicia; bolhas sobem com
- *  movimento orgânico e o jogador estoura TODAS antes de escaparem lá em cima.
- *  Rodadas: mais bolhas, mais rápidas, mais dançantes. Uma escapou = fim. */
+/** Minigame das bolhas de sabão: tap no potinho inicia; o cenário vira um
+ *  jardim de céu aberto e as bolhas entram por BAIXO da tela, dançando até o
+ *  topo — o jogador estoura todas antes de escaparem. Rodadas: mais bolhas,
+ *  mais rápidas, mais dançantes. Uma escapou = fim.
+ *
+ *  Tudo em coordenadas DE TELA (NDC → mundo no plano das bolhas): nascem
+ *  abaixo da borda real de baixo, fogem na borda real de cima e o x é
+ *  limitado pra nenhuma bolha sair da área visível (sempre dá pra estourar). */
 
-const ESCAPE_Y = 2.35 // acima disso a bolha "fugiu" (topo do frustum + folga)
+const BUBBLE_Z = 0.45 // plano (mundo) onde as bolhas vivem
+const SIDE_NDC = 0.86 // |x| máximo em NDC — margem pro dedo alcançar
+const ESCAPE_NDC_Y = 1.08 // acima disso (topo real + folga) a bolha "fugiu"
 
 interface Bubble {
   sprite: THREE.Sprite
   vy: number
   baseX: number
+  xMin: number
+  xMax: number
   size: number
   // dois senos dessincronizados = dança orgânica de bolha de sabão
   f1: number
@@ -82,6 +91,30 @@ function bubbleTexture(): THREE.CanvasTexture {
   return t
 }
 
+function cloudTexture(): THREE.CanvasTexture {
+  const w = 256
+  const h = 128
+  const c = document.createElement('canvas')
+  c.width = w
+  c.height = h
+  const ctx = c.getContext('2d')!
+  const puffs: [number, number, number][] = [
+    [70, 84, 38], [120, 68, 46], [175, 82, 40], [105, 92, 40], [148, 92, 38],
+  ]
+  for (const [x, y, r] of puffs) {
+    const g = ctx.createRadialGradient(x, y - r * 0.25, r * 0.2, x, y, r)
+    g.addColorStop(0, 'rgba(255,255,255,0.95)')
+    g.addColorStop(1, 'rgba(255,255,255,0)')
+    ctx.fillStyle = g
+    ctx.beginPath()
+    ctx.arc(x, y, r, 0, Math.PI * 2)
+    ctx.fill()
+  }
+  const t = new THREE.CanvasTexture(c)
+  t.colorSpace = THREE.SRGBColorSpace
+  return t
+}
+
 export class BubbleGame {
   active = false
   round = 0
@@ -94,14 +127,24 @@ export class BubbleGame {
   private mat = new THREE.SpriteMaterial({
     map: bubbleTexture(),
     depthWrite: false,
+    depthTest: false, // bolha nunca "afunda" atrás do chão/props
     transparent: true,
   })
+  private cloudMat = new THREE.SpriteMaterial({
+    map: cloudTexture(),
+    depthWrite: false,
+    transparent: true,
+    opacity: 0.9,
+  })
   private bubbles: Bubble[] = []
+  private clouds: THREE.Sprite[] = []
   private toSpawn = 0
   private spawnTimer = 0
   private t = 0
   private ray = new THREE.Raycaster()
   private ndc = new THREE.Vector2()
+  private plane = new THREE.Plane(new THREE.Vector3(0, 0, 1), -BUBBLE_Z)
+  private tmpV = new THREE.Vector3()
   private downT = 0
   private downMoved = 0
   private lastX = 0
@@ -138,6 +181,26 @@ export class BubbleGame {
     })
   }
 
+  /** Ponto tocável do potinho em px (pros testes, sem coordenada mágica):
+   *  meio do corpo do pote, não o centro do bbox (que pode cair no ar). */
+  blowerScreenPosition(): { x: number; y: number } | null {
+    const blower = this.deps.rooms.currentGroup()?.getObjectByName('Blower')
+    if (!blower) return null
+    const box = new THREE.Box3().setFromObject(blower)
+    const v = box.getCenter(new THREE.Vector3())
+    v.y = box.min.y + (box.max.y - box.min.y) * 0.18 // barriga do pote
+    v.project(this.deps.gs.camera)
+    return { x: ((v.x + 1) / 2) * innerWidth, y: ((1 - v.y) / 2) * innerHeight }
+  }
+
+  /** Ponto de mundo no plano das bolhas visto em (nx, ny) de NDC. */
+  private worldAtNdc(nx: number, ny: number, out: THREE.Vector3): THREE.Vector3 {
+    this.ndc.set(nx, ny)
+    this.ray.setFromCamera(this.ndc, this.deps.gs.camera)
+    if (!this.ray.ray.intersectPlane(this.plane, out)) out.set(0, 0.5, BUBBLE_Z)
+    return out
+  }
+
   private hitBlower(x: number, y: number): boolean {
     const group = this.deps.rooms.currentGroup()
     const blower = group?.getObjectByName('Blower')
@@ -150,10 +213,13 @@ export class BubbleGame {
   private onUp(e: PointerEvent): void {
     if (this.active) return
     const isTap = performance.now() - this.downT < 300 && this.downMoved < 14
+    // POKED conta: o tap pode ter acertado raposa E pote (ele fica meio na
+    // frente dela) — se o dedo tocou o pote, o minigame é a intenção.
+    const st = this.deps.behavior.state
     if (
       isTap &&
       this.deps.rooms.current === 'brinquedos' &&
-      this.deps.behavior.state === 'IDLE' &&
+      (st === 'IDLE' || st === 'POKED') &&
       this.hitBlower(e.clientX, e.clientY)
     ) {
       this.enter()
@@ -167,6 +233,11 @@ export class BubbleGame {
     this.ending = false
     this.round = 0
     this.popped = 0
+    // tema: jardim de céu aberto (props da sala saem de cena)
+    const group = this.deps.rooms.currentGroup()
+    if (group) group.visible = false
+    this.deps.gs.setRoomLook(BUBBLE_LOOK)
+    this.addClouds()
     pop()
     this.startRound(1)
     this.onEnter?.()
@@ -176,8 +247,32 @@ export class BubbleGame {
     if (!this.active) return
     this.active = false
     this.clear()
+    this.removeClouds()
+    const group = this.deps.rooms.currentGroup()
+    if (group) group.visible = true
+    this.deps.gs.setRoomLook(ROOM_META[this.deps.rooms.current].look)
     this.deps.behavior.enter('IDLE')
     this.onExit?.()
+  }
+
+  private addClouds(): void {
+    const spots: [number, number, number, number][] = [
+      // x, y, escala, deriva
+      [-1.3, 2.5, 1.6, 0.05], [1.1, 3.1, 2.1, -0.035], [0.2, 2.1, 1.2, 0.04],
+    ]
+    for (const [x, y, scale, drift] of spots) {
+      const s = new THREE.Sprite(this.cloudMat)
+      s.position.set(x, y, -2.5)
+      s.scale.set(scale, scale * 0.5, 1)
+      s.userData.drift = drift
+      this.deps.gs.scene.add(s)
+      this.clouds.push(s)
+    }
+  }
+
+  private removeClouds(): void {
+    for (const c of this.clouds) this.deps.gs.scene.remove(c)
+    this.clouds = []
   }
 
   private clear(): void {
@@ -197,17 +292,24 @@ export class BubbleGame {
     const r = this.round
     const size = 0.16 + Math.random() * 0.1
     const sprite = new THREE.Sprite(this.mat)
-    // nasce perto do assoprador (direita) com espalhamento crescente
-    const spread = Math.min(0.7, 0.25 + r * 0.06)
-    sprite.position.set(0.5 + (Math.random() - 0.5) * spread * 2, 0.25, 0.45)
+    sprite.renderOrder = 40
+    // nasce logo ABAIXO da borda de baixo da tela, espalhando mais a cada rodada
+    const spread = Math.min(0.78, 0.3 + r * 0.07)
+    const nx = (Math.random() - 0.5) * 2 * spread
+    this.worldAtNdc(nx, -1.18, sprite.position)
     sprite.scale.setScalar(size)
     this.deps.gs.scene.add(sprite)
+    // limites laterais (mundo) equivalentes à borda visível — sempre estourável
+    const xMin = this.worldAtNdc(-SIDE_NDC, 0, this.tmpV).x
+    const xMax = this.worldAtNdc(SIDE_NDC, 0, this.tmpV).x
     const speed = 0.24 + r * 0.045 + Math.random() * 0.08
     const sway = 0.05 + r * 0.02
     this.bubbles.push({
       sprite,
       vy: speed,
-      baseX: sprite.position.x,
+      baseX: clamp(sprite.position.x, xMin, xMax),
+      xMin,
+      xMax,
       size,
       f1: 0.9 + Math.random() * 0.9,
       f2: 2.1 + Math.random() * 1.6,
@@ -267,15 +369,29 @@ export class BubbleGame {
       }
     }
 
+    // nuvens derivam devagarzinho
+    for (const c of this.clouds) {
+      c.position.x += (c.userData.drift as number) * dt
+      if (c.position.x > 2.2) c.position.x = -2.2
+      if (c.position.x < -2.2) c.position.x = 2.2
+    }
+
     let gazeTarget: THREE.Vector3 | null = null
+    let escaped = false
     for (const b of this.bubbles) {
       const age = this.t - b.born
       // dança orgânica: dois senos + respiração de tamanho + sobe acelerando de leve
       b.sprite.position.y += b.vy * dt * (1 + age * 0.03)
-      b.sprite.position.x =
-        b.baseX + Math.sin(age * b.f1 + b.ph1) * b.a1 + Math.sin(age * b.f2 + b.ph2) * b.a2
+      b.sprite.position.x = clamp(
+        b.baseX + Math.sin(age * b.f1 + b.ph1) * b.a1 + Math.sin(age * b.f2 + b.ph2) * b.a2,
+        b.xMin,
+        b.xMax,
+      )
       b.sprite.scale.setScalar(b.size * (1 + 0.06 * Math.sin(age * 3.1 + b.ph2)))
       if (!gazeTarget || b.sprite.position.y > gazeTarget.y) gazeTarget = b.sprite.position
+      // fugiu pela borda REAL de cima da tela?
+      this.tmpV.copy(b.sprite.position).project(this.deps.gs.camera)
+      if (this.tmpV.y > ESCAPE_NDC_Y) escaped = true
     }
 
     // ela acompanha a bolha mais alta, encantada
@@ -286,9 +402,6 @@ export class BubbleGame {
       this.deps.pose.gazeActive = true
     }
 
-    // escapou = fim de jogo
-    if (!this.ending && this.bubbles.some((b) => b.sprite.position.y > ESCAPE_Y)) {
-      this.gameOver()
-    }
+    if (!this.ending && escaped) this.gameOver()
   }
 }

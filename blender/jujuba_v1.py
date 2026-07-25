@@ -29,6 +29,8 @@ COLORS = {
     'BlushPink': '#FF9FB2',
     'MouthDark': '#5A2A28',
     'PawCocoa': '#6B4632',
+    'ToothWhite': '#FFFFFF',
+    'TonguePink': '#FF8FA8',
 }
 
 P = {
@@ -162,11 +164,37 @@ def build():
                            segments=12, rings=8)
         eyes[side] = lib.join([ball, spark], f'Eye{side}')
 
+    # ---- dentinhos + língua (escondidos com a boca fechada; a escovação dá
+    # zoom na boca aberta e o material 'Teeth' amarela conforme o stat) ----
+    tooth = M['ToothWhite']
+    tooth.node_tree.nodes['Principled BSDF'].inputs['Roughness'].default_value = 0.35
+    teeth_parts = []
+    # fileira de cima gruda no crânio ('head'), a de baixo desce com o 'jaw'.
+    # Janela apertada da v1: cada dente precisa caber ATRÁS do maxilar fechado
+    # e À FRENTE do focinho/interior (senão some ou vaza) — valores calculados
+    # nos elipsoides de P e conferidos no render expr_jawopen.
+    upper = [(0.052, -0.2055, 0.7545), (0.019, -0.212, 0.7515),
+             (-0.019, -0.212, 0.7515), (-0.052, -0.2055, 0.7545)]
+    lower = [(0.046, -0.208, 0.770), (0.017, -0.214, 0.772),
+             (-0.017, -0.214, 0.772), (-0.046, -0.208, 0.770)]
+    for i, pos in enumerate(upper):
+        teeth_parts.append(lib.sphere(f'tooth_u{i}', 0.0155, pos, scale=(1, 0.6, 1.05),
+                                      material=tooth, group='head', segments=12, rings=8))
+    for i, pos in enumerate(lower):
+        teeth_parts.append(lib.sphere(f'tooth_l{i}', 0.0135, pos, scale=(1, 0.62, 1.0),
+                                      material=tooth, group='jaw', segments=12, rings=8))
+    teeth = lib.join(teeth_parts, 'Teeth')
+    tongue = lib.join([lib.sphere('tongue_pad', 0.048, (0, -0.168, 0.750),
+                                  scale=(1.05, 1.2, 0.5), material=M['TonguePink'],
+                                  group='jaw')], 'Tongue')
+
     # ---- armature + skinning ----
     arm = lib.build_armature('JujubaRig', BONES)
     lib.skin(body, arm)
     lib.skin(eyes['L'], arm)
     lib.skin(eyes['R'], arm)
+    lib.skin(teeth, arm)
+    lib.skin(tongue, arm)
 
     # ---- shape keys (sempre DEPOIS de join/apply) ----
     # blink: achata o olho num arco "∩" feliz

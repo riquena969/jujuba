@@ -432,18 +432,14 @@ body {
 
 .brush-hint {
   display: flex;
-  flex-direction: column;
   align-items: center;
-  gap: 2px;
-  min-width: 110px;
-  padding: 8px 10px;
-  font-size: 13px;
+  max-width: 118px;
+  padding: 4px 2px 4px 6px;
+  font-size: 12px;
+  line-height: 1.25;
   font-weight: 800;
+  text-align: center;
   color: #2f7e86;
-}
-
-.brush-hint span {
-  font-size: 30px;
 }
 
 .tool-cursor {

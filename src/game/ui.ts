@@ -18,8 +18,8 @@ interface Opts {
   /** Modo banho: troca de ferramenta e botão Voltar (compartilhado c/ escovação). */
   onBathTool: (tool: 'sponge' | 'shower') => void
   onBathExit: () => void
-  /** Escovação: botão Enxaguar. */
-  onBrushRinse: () => void
+  /** Escovação: escova ou jatinho de água. */
+  onBrushTool: (tool: 'brush' | 'jet') => void
   /** Primeiro toque/batismo — gesto que destrava áudio/mic. name vem do form. */
   onFirstTap: (name?: string) => void
   /** Nome atual da raposinha (mostrado no overlay de retorno). */
@@ -38,6 +38,8 @@ export interface UI {
   setBathMode(on: boolean): void
   setBathTool(tool: 'sponge' | 'shower'): void
   setBrushMode(on: boolean): void
+  setBrushTool(tool: 'brush' | 'jet'): void
+  setBrushHint(text: string): void
   /** Minigame das bolhas: HUD de rodada/estouradas + Voltar. */
   setPlayMode(on: boolean): void
   updateGameHud(round: number, popped: number): void
@@ -52,7 +54,7 @@ export function createUI({
   onSleepToggle,
   onBathTool,
   onBathExit,
-  onBrushRinse,
+  onBrushTool,
   onFirstTap,
   petName,
   firstRun,
@@ -189,21 +191,26 @@ export function createUI({
   const spongeBtn = mkTool('sponge', '🧽', 'Esponja')
   const showerBtn = mkTool('shower', '🚿', 'Ducha')
 
-  // ---- escovação: dica + Enxaguar ----
+  // ---- escovação: dica + ferramentas (escova / jatinho) ----
   const brushTools = document.createElement('div')
   brushTools.className = 'brush-tools'
   brushTools.hidden = true
   const brushHint = document.createElement('div')
   brushHint.className = 'brush-hint'
-  brushHint.innerHTML = '<span>🪥</span>Esfregue a boquinha!'
-  const rinseBtn = document.createElement('button')
-  rinseBtn.className = 'tool-btn'
-  rinseBtn.dataset.tool = 'rinse'
-  rinseBtn.innerHTML = '<span>💧</span>Enxaguar'
-  rinseBtn.addEventListener('click', () => {
-    onBrushRinse()
-  })
-  brushTools.append(brushHint, rinseBtn)
+  const mkBrushTool = (tool: 'brush' | 'jet', emoji: string, label: string) => {
+    const b = document.createElement('button')
+    b.className = 'tool-btn'
+    b.dataset.tool = tool
+    b.innerHTML = `<span>${emoji}</span>${label}`
+    b.addEventListener('click', () => {
+      pop()
+      onBrushTool(tool)
+    })
+    return b
+  }
+  const brushBtn = mkBrushTool('brush', '🪥', 'Escovar')
+  const jetBtn = mkBrushTool('jet', '💦', 'Jatinho')
+  brushTools.append(brushHint, brushBtn, jetBtn)
 
   // ---- HUD do minigame das bolhas ----
   const gameHud = document.createElement('div')
@@ -274,6 +281,13 @@ export function createUI({
       brushTools.hidden = !on
       nav.hidden = on
       bars.hidden = on
+    },
+    setBrushTool(tool) {
+      brushBtn.classList.toggle('tool-active', tool === 'brush')
+      jetBtn.classList.toggle('tool-active', tool === 'jet')
+    },
+    setBrushHint(text) {
+      brushHint.textContent = text
     },
     setPlayMode(on) {
       backBtn.hidden = !on

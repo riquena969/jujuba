@@ -119,6 +119,25 @@ def build_brush_set():
     lib.join(parts, 'BrushSet')
 
 
+def build_toothbrush():
+    """Escova de dente chunky que segue o dedo na escovação (deitada no +x,
+    cerdas pra cima; o jogo rotaciona pra apontar as cerdas nos dentes)."""
+    pink = lib.mat('BrushPink', '#FF8FB3', roughness=0.5)
+    white = lib.mat('BrushWhite', '#FFFFFF', roughness=0.4)
+    bristle = lib.mat('BrushBristle', '#D8F2FF', roughness=0.8)
+    parts = [
+        lib.box('handle', (0.20, 0.045, 0.035), (-0.07, 0, 0), material=pink,
+                bevel=0.015),
+        lib.box('neck', (0.08, 0.03, 0.025), (0.055, 0, 0.004), material=pink,
+                bevel=0.01),
+        lib.box('head', (0.09, 0.04, 0.028), (0.115, 0, 0.008), material=white,
+                bevel=0.012),
+        lib.box('bristles', (0.082, 0.032, 0.03), (0.115, 0, 0.036),
+                material=bristle, bevel=0.008),
+    ]
+    lib.join(parts, 'Toothbrush')
+
+
 if __name__ == '__main__':
     lib.reset_scene()
     build_room()
@@ -140,4 +159,11 @@ if __name__ == '__main__':
     lib.setup_render(res=(640, 500))
     cam = lib.add_preview_rig()
     lib.render_shot(cam, 'brush-set', (0, -2.6, 0.95), (0, 0, 0.5))
+
+    lib.reset_scene()
+    build_toothbrush()
+    lib.export_glb(os.path.join(lib.MODELS_DIR, 'toothbrush.glb'), min_bytes=1_000)
+    lib.setup_render(res=(512, 380))
+    cam = lib.add_preview_rig()
+    lib.render_shot(cam, 'toothbrush', (0, -0.7, 0.35), (0.02, 0, 0.01))
     lib.log('BATHROOM OK')

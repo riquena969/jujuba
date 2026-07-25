@@ -118,9 +118,11 @@ export class FoxBehavior {
     return true
   }
 
-  /** Tap no assoprador: inicia o minigame das bolhas. */
+  /** Tap no potinho de bolha: inicia o minigame. Aceita POKED porque o pote
+   *  fica em parte na frente da raposa — o toque nele "poka" primeiro, mas a
+   *  intenção clara do jogador é o brinquedo, então ele vence. */
   tryStartPlay(): boolean {
-    if (this.state !== 'IDLE') return false
+    if (this.state !== 'IDLE' && this.state !== 'POKED') return false
     this.enter('PLAYING')
     return true
   }

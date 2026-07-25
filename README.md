@@ -5,12 +5,13 @@
 
 Bichinho virtual estilo *My Talking Tom*, rodando **no browser do celular**. Uma
 raposinha chibi (você escolhe o nome — padrão Foxy) que reage a carinho, come, dorme,
-**toma banho**, **escova os dentes** e **imita a sua voz** com vozinha aguda — igual ao
-Talking Tom raiz. Quatro cômodos (🍳 cozinha, 🛋️ sala, 🌙 quarto, 🛁 banheiro) nas
-setinhas do topo. Ela se suja com o tempo (manchinhas + barra 🧼) e comer suja os
-dentinhos (farelos + dentes amarelando) — **banheira e pia brilham piscando quando
-precisam de você**. Modelo 3D v2: malha única gerada por script (bmesh + subsurf),
-olhos de íris âmbar, pálpebras e sobrancelhas de verdade, boca com dentes e língua.
+**toma banho**, **escova os dentes**, **joga bolinha e estoura bolhas de sabão** e
+**imita a sua voz** com vozinha aguda — igual ao Talking Tom raiz. Cinco cômodos
+(🍳 cozinha, 🛋️ sala, 🌙 quarto, 🛁 banheiro, 🧸 brinquedos) nas setinhas do topo.
+Ela se suja com o tempo (manchinhas + barra 🧼) e comer suja os dentinhos (farelos +
+dentes amarelando + manchas nos dentes) — **banheira, pia e potinho de bolha brilham
+piscando quando pedem um toque**. Modelo 3D chibi paramétrico (a v1 querida), agora
+com dentinhos e língua que aparecem quando a boca abre.
 
 Tudo 3D (Three.js), com o modelo **gerado 100% por script no Blender** (nada de assets
 comprados): malha, ossos, expressões e ícones saem de `blender/*.py`.
@@ -94,10 +95,14 @@ npm run test:e2e   # Playwright + mic FAKE (WAV sintético de fala) — cobre ca
 ## Salas & atividades
 
 🍳 cozinha (roleta de comidas) · 🛋️ sala (imitar a voz) · 🌙 quarto (dormir) ·
-🛁 banheiro (banho + escovar os dentes) · 🧸 **brinquedos**: bolinha física estilo Pou
-(arrasta e arremessa, ela acompanha e rebate!) e o **minigame das bolhas de sabão** —
-toque no assoprador brilhante, estoure todas antes de fugirem; cada rodada vem com
-mais bolhas, mais rápidas e mais dançantes.
+🛁 banheiro (banho + **escovação em close**: a câmera dá zoom na boca escancarada,
+com dentinhos de verdade mostrando manchas de sujeira — escova 3D no dedo esfrega,
+o jatinho 💦 enxágua, gargarejo + cuspidinha no final) · 🧸 **brinquedos**: bolinha
+física estilo Pou (arrasta e arremessa, ela acompanha e rebate!) e o **minigame das
+bolhas de sabão** — toque no potinho brilhante e o cenário vira um jardim de céu
+aberto: as bolhas entram por baixo da tela (sempre ao alcance do dedo) e você
+estoura todas antes de fugirem pelo topo; cada rodada vem com mais bolhas, mais
+rápidas e mais dançantes.
 
 ## Roadmap
 

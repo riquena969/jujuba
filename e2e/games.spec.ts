@@ -1,9 +1,6 @@
 import { test, expect, type Page } from '@playwright/test'
 import { startGame, goToRoom } from './helpers'
 
-// Assoprador de bolhas na sala de brinquedos (aro da varinha, lado direito).
-const BLOWER = { x: 320, y: 490 }
-
 function canvasEvent(page: Page, type: string, x: number, y: number): Promise<void> {
   return page.evaluate(
     ({ type, x, y }) => {
@@ -13,6 +10,15 @@ function canvasEvent(page: Page, type: string, x: number, y: number): Promise<vo
     },
     { type, x, y },
   )
+}
+
+/** Tap no potinho de bolha (posição projetada — sem coordenada mágica). */
+async function tapBlower(page: Page): Promise<void> {
+  const blower = await page.evaluate(() => window.__jujuba.bubbles.blowerScreenPosition())
+  expect(blower).not.toBeNull()
+  await canvasEvent(page, 'pointerdown', blower!.x, blower!.y)
+  await page.waitForTimeout(60)
+  await canvasEvent(page, 'pointerup', blower!.x, blower!.y)
 }
 
 test.beforeEach(async ({ page }) => {
@@ -43,29 +49,30 @@ test('bolinha: arrastar move e arremessar dá velocidade', async ({ page }) => {
   })
 })
 
-test('bolhas: assoprador inicia, estourar avança rodada, escapar encerra', async ({ page }) => {
-  // brilho-convite do assoprador ligado
+test('bolhas: entram por baixo, ficam na tela, rodadas sobem, escapar encerra', async ({ page }) => {
+  // brilho-convite do potinho ligado
   await page.waitForTimeout(500)
   expect(await page.evaluate(() => window.__jujuba.needGlow.blowerIntensity)).toBeGreaterThan(0)
 
-  // tap no assoprador
-  await canvasEvent(page, 'pointerdown', BLOWER.x, BLOWER.y)
-  await page.waitForTimeout(60)
-  await canvasEvent(page, 'pointerup', BLOWER.x, BLOWER.y)
+  await tapBlower(page)
   await page.waitForFunction(() => window.__jujuba.state === 'PLAYING')
   await expect(page.locator('.game-hud')).toBeVisible()
   await expect(page.locator('.room-nav')).toBeHidden()
 
-  // rodada 1: estoura todas (3 bolhas) mirando nas posições projetadas
+  // primeira bolha nasce ABAIXO da borda de baixo da tela
   await page.waitForFunction(() => window.__jujuba.bubbles.bubbleCount > 0)
+  const first = await page.evaluate(() => window.__jujuba.bubbles.screenPositions()[0])
+  expect(first.y).toBeGreaterThan(844) // fora da tela, por baixo
+
+  // rodada 1: estoura todas mirando nas posições projetadas; enquanto isso,
+  // NENHUMA bolha pode fugir pelas laterais (sempre dá pra estourar)
   for (let tries = 0; tries < 40; tries++) {
-    const done = await page.evaluate(() => {
-      const g = window.__jujuba.bubbles
-      return g.round >= 2
-    })
+    const done = await page.evaluate(() => window.__jujuba.bubbles.round >= 2)
     if (done) break
     const targets = await page.evaluate(() => window.__jujuba.bubbles.screenPositions())
     for (const t of targets) {
+      expect(t.x).toBeGreaterThanOrEqual(0)
+      expect(t.x).toBeLessThanOrEqual(390)
       await canvasEvent(page, 'pointerdown', t.x, t.y)
       await canvasEvent(page, 'pointerup', t.x, t.y)
     }

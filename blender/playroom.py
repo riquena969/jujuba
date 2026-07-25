@@ -31,21 +31,34 @@ def build_playroom():
     ]
     lib.join(toys, 'Toys')
 
-    # ---- assoprador de bolhas (direita, mais à frente = fácil de tocar) ----
+    # ---- potinho de bolha de sabão (direita, silhueta única e conectada) ----
+    # Pote com aro/tampa + varinha que SAI de dentro do sabão e termina no aro
+    # de soprar — geometria calculada pra tudo se tocar (nada flutuando solto).
     soap = lib.mat('SoapBlue', '#5EC8E8', roughness=0.35)
-    bucket_in = lib.mat('SoapFoam', '#DFF6FF', roughness=0.6)
+    lip_m = lib.mat('SoapBlueDeep', '#3FA9D0', roughness=0.35)
+    soap_in = lib.mat('SoapFoam', '#DFF6FF', roughness=0.6)
     wand = lib.mat('WandPink', '#FF8FB3', roughness=0.5)
+
+    cx, cy = 0.38, 0.98  # dentro do frustum portrait (antes metade saía da tela)
+    tilt = D(-14)  # varinha encostada na boca do pote, inclinada pra esquerda
+    direc = (math.sin(tilt), 0.0, math.cos(tilt))
+    p0 = (cx + 0.06, cy, 0.10)  # pé da varinha, mergulhado no sabão
+    length = 0.5
+    mid = tuple(p0[i] + direc[i] * length / 2 for i in range(3))
+    top = tuple(p0[i] + direc[i] * length for i in range(3))
+    ring_c = tuple(top[i] + direc[i] * 0.085 for i in range(3))  # aro tangencia a ponta
+
     parts = [
-        lib.cylinder('bucket', 0.16, 0.24, (0.66, 1.15, 0.12), material=soap),
-        lib.cylinder('bucket_soap', 0.14, 0.03, (0.66, 1.15, 0.245), material=bucket_in),
-        # varinha inclinada com aro
-        lib.cylinder('wand_stick', 0.018, 0.34, (0.56, 1.08, 0.38), material=wand,
-                     rot=(D(-18), D(24), 0)),
+        lib.cylinder('jar', 0.15, 0.28, (cx, cy, 0.14), material=soap),
+        lib.cylinder('jar_lip', 0.17, 0.045, (cx, cy, 0.30), material=lip_m),
+        lib.cylinder('jar_soap', 0.14, 0.02, (cx, cy, 0.305), material=soap_in),
+        lib.cylinder('wand_stick', 0.017, length, mid, material=wand,
+                     rot=(0, tilt, 0)),
     ]
     import bpy
-    bpy.ops.mesh.primitive_torus_add(major_radius=0.085, minor_radius=0.014,
-                                     location=(0.47, 1.0, 0.55),
-                                     rotation=(D(66), 0, D(24)))
+    # aro no plano XZ (normal -y = de frente pra câmera), coplanar com a varinha
+    bpy.ops.mesh.primitive_torus_add(major_radius=0.085, minor_radius=0.016,
+                                     location=ring_c, rotation=(D(90), 0, 0))
     ring = bpy.context.active_object
     lib._finish(ring, 'wand_ring', wand, None)
     parts.append(ring)

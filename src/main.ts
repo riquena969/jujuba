@@ -92,7 +92,7 @@ FoxRig.load(asset('models/jujuba.glb'))
     voice = new VoiceSystem({ behavior, pose })
     bath = new BathSystem({ gs, rooms, behavior, particles, stats, hitProxy, canvas })
     void bath.preload()
-    brush = new BrushSystem({ gs, rooms, behavior, particles, stats, pose, hitProxy, canvas })
+    brush = new BrushSystem({ gs, rooms, behavior, particles, stats, pose, rig: loaded, hitProxy, canvas })
     void brush.preload()
     ball = new PlayBall({ gs, behavior, stats, pose, canvas })
     bubbles = new BubbleGame({ gs, rooms, behavior, particles, stats, pose, canvas })
@@ -141,8 +141,9 @@ FoxRig.load(asset('models/jujuba.glb'))
         else if (brush?.active) brush.exit()
         else bubbles?.exit()
       },
-      onBrushRinse() {
-        brush?.rinse()
+      onBrushTool(tool) {
+        brush?.setTool(tool)
+        ui.setBrushTool(tool)
       },
       onFirstTap(name) {
         if (name) {
@@ -212,8 +213,17 @@ FoxRig.load(asset('models/jujuba.glb'))
       ui.setBathTool(bath!.tool)
     }
     bath.onExit = () => ui.setBathMode(false)
-    brush.onEnter = () => ui.setBrushMode(true)
-    brush.onExit = () => ui.setBrushMode(false)
+    brush.onEnter = () => {
+      ui.setBrushMode(true)
+      ui.setBrushTool(brush!.tool)
+      mouthDirt.suppress(true)
+    }
+    brush.onExit = () => {
+      ui.setBrushMode(false)
+      mouthDirt.suppress(false)
+    }
+    brush.onToolChange = (tool) => ui.setBrushTool(tool)
+    brush.onHint = (text) => ui.setBrushHint(text)
     bubbles.onEnter = () => {
       ui.setPlayMode(true)
       ui.updateGameHud(1, 0)

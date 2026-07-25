@@ -74,6 +74,8 @@ const MOUTH_SPOTS: [number, number, number][] = [
 
 export class MouthDirt {
   private sprites: THREE.Sprite[] = []
+  private wanted = 0
+  private suppressed = false
 
   constructor(scene: THREE.Scene) {
     const mat = new THREE.SpriteMaterial({
@@ -97,7 +99,18 @@ export class MouthDirt {
 
   /** teeth 100 → limpo; <60 um farelo, <40 dois, <25 três. */
   setTeeth(teeth: number): void {
-    const visible = teeth < 25 ? 3 : teeth < 40 ? 2 : teeth < 60 ? 1 : 0
+    this.wanted = teeth < 25 ? 3 : teeth < 40 ? 2 : teeth < 60 ? 1 : 0
+    this.apply()
+  }
+
+  /** Some durante o close da escovação (a sujeira lá é NOS dentes). */
+  suppress(on: boolean): void {
+    this.suppressed = on
+    this.apply()
+  }
+
+  private apply(): void {
+    const visible = this.suppressed ? 0 : this.wanted
     this.sprites.forEach((s, i) => {
       s.visible = i < visible
     })

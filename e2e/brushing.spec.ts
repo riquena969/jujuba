@@ -15,13 +15,18 @@ function canvasEvent(page: Page, type: string, x: number, y: number): Promise<vo
   )
 }
 
-async function scrubMouth(page: Page): Promise<void> {
-  await canvasEvent(page, 'pointerdown', 195, 360)
-  for (let i = 0; i < 14; i++) {
-    await canvasEvent(page, 'pointermove', 150 + (i % 3) * 45, 330 + (i % 5) * 22)
-    await page.waitForTimeout(20)
+/** Varre a ferramenta em zigue-zague na boca (fileira de cima E de baixo,
+ *  como uma escovação de verdade) usando a posição projetada do close-up. */
+async function sweepMouth(page: Page, spreadX: number): Promise<void> {
+  const m = await page.evaluate(() => window.__jujuba.brush.mouthScreen())
+  await canvasEvent(page, 'pointerdown', m.x, m.y)
+  for (let i = 0; i < 18; i++) {
+    const x = m.x + Math.sin(i * 1.1) * spreadX
+    const y = m.y + (i % 2 === 0 ? -30 : 95) + Math.sin(i * 0.6) * 12
+    await canvasEvent(page, 'pointermove', x, y)
+    await page.waitForTimeout(18)
   }
-  await canvasEvent(page, 'pointerup', 195, 360)
+  await canvasEvent(page, 'pointerup', m.x, m.y)
 }
 
 test.beforeEach(async ({ page }) => {
@@ -57,12 +62,11 @@ test('comer suja os dentinhos', async ({ page }) => {
   expect(teeth).toBeGreaterThan(80)
 })
 
-test('escovação completa: pia → escova → enxagua → dentes novos', async ({ page }) => {
+test('escovação em close: sujeira nos dentes → escova → jatinho → dentes novos', async ({ page }) => {
   await page.waitForFunction(() => window.__jujuba.brush?.ready)
   await page.evaluate(() => {
     window.__jujuba.stats.setTeeth(20)
   })
-  expect(await page.evaluate(() => window.__jujuba.mouthDirt.count)).toBeGreaterThan(1)
 
   await goToRoom(page, '🛁')
 
@@ -72,22 +76,34 @@ test('escovação completa: pia → escova → enxagua → dentes novos', async 
   await canvasEvent(page, 'pointerup', SINK.x, SINK.y)
   await page.waitForFunction(() => window.__jujuba.state === 'BRUSHING')
   await expect(page.locator('.brush-tools')).toBeVisible()
+  await expect(page.locator('.tool-btn[data-tool="brush"]')).toBeVisible()
+  await expect(page.locator('.tool-btn[data-tool="jet"]')).toBeVisible()
   await expect(page.locator('.btn-back')).toBeVisible()
 
-  // escova até completar
-  for (let round = 0; round < 8; round++) {
-    await scrubMouth(page)
+  // dentes sujos (teeth 20) = manchas visíveis nos dentinhos + boca escancarada
+  expect(await page.evaluate(() => window.__jujuba.brush.dirtCount)).toBeGreaterThanOrEqual(3)
+  await page.waitForTimeout(1100) // zoom da câmera assenta na boca
+  expect(await page.evaluate(() => window.__jujuba.pose.jawOpen)).toBeGreaterThan(0.8)
+
+  // escova as manchas até limpar tudo (progress 1 troca sozinho pro jatinho)
+  for (let round = 0; round < 14; round++) {
+    await sweepMouth(page, 60 + (round % 3) * 30)
     const p = await page.evaluate(() => window.__jujuba.brush.progress)
     if (p >= 1) break
   }
   expect(await page.evaluate(() => window.__jujuba.brush.progress)).toBeGreaterThanOrEqual(1)
+  expect(await page.evaluate(() => window.__jujuba.brush.dirtCount)).toBe(0)
+  expect(await page.evaluate(() => window.__jujuba.brush.tool)).toBe('jet')
 
-  // enxaguar: gargarejo + cuspidinha + dentes 100
-  await page.locator('.tool-btn[data-tool="rinse"]').click()
+  // jatinho tira a espuminha → gargarejo+cuspidinha automáticos → dentes 100
+  for (let round = 0; round < 14; round++) {
+    const foam = await page.evaluate(() => window.__jujuba.brush.foamCount)
+    if (foam === 0) break
+    await sweepMouth(page, 140)
+  }
   await page.waitForFunction(() => window.__jujuba.stats.teeth > 99, undefined, {
-    timeout: 6_000,
+    timeout: 8_000,
   })
-  expect(await page.evaluate(() => window.__jujuba.mouthDirt.count)).toBe(0)
   expect(await page.evaluate(() => window.__jujuba.state)).toBe('BRUSHING')
 
   // voltar

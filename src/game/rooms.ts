@@ -65,6 +65,16 @@ export const BATH_LOOK: RoomLook = {
   rugRim: '#b9e4df',
 }
 
+/** Look do minigame das bolhas: jardim com céu aberto (as bolhas sobem de
+ *  baixo da tela e o cenário vira um quintal de tarde ensolarada). */
+export const BUBBLE_LOOK: RoomLook = {
+  bgTop: '#a8dcff',
+  bgBottom: '#e6f7ff',
+  floor: '#b7e39c',
+  rug: '#d9f2c2',
+  rugRim: '#9cd684',
+}
+
 export class Rooms {
   current: RoomId
   private groups = new Map<RoomId, THREE.Group>()
