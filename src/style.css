@@ -37,3 +37,77 @@ body {
   padding-left: env(safe-area-inset-left, 0px);
   padding-right: env(safe-area-inset-right, 0px);
 }
+
+/* ---- Botões ---- */
+.btn {
+  pointer-events: auto;
+  position: absolute;
+  min-height: 56px;
+  padding: 0 20px;
+  border: none;
+  border-radius: 28px;
+  background: rgba(255, 255, 255, 0.88);
+  box-shadow: 0 4px 14px rgba(146, 82, 58, 0.22);
+  font-family: inherit;
+  font-size: 17px;
+  font-weight: 700;
+  color: #7a4a32;
+  cursor: pointer;
+  transition: transform 0.12s ease;
+  touch-action: manipulation;
+}
+
+.btn:active {
+  transform: scale(0.93);
+}
+
+.btn-eat {
+  left: 16px;
+  bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+}
+
+.tray[hidden] {
+  display: none;
+}
+
+.tray {
+  pointer-events: auto;
+  position: absolute;
+  left: 16px;
+  bottom: calc(84px + env(safe-area-inset-bottom, 0px));
+  display: flex;
+  gap: 10px;
+  padding: 10px;
+  border-radius: 24px;
+  background: rgba(255, 255, 255, 0.82);
+  box-shadow: 0 6px 18px rgba(146, 82, 58, 0.25);
+  animation: tray-pop 0.16s ease;
+}
+
+@keyframes tray-pop {
+  from {
+    transform: translateY(8px) scale(0.92);
+    opacity: 0;
+  }
+}
+
+.food-btn {
+  width: 64px;
+  height: 64px;
+  border: none;
+  border-radius: 18px;
+  background: #fff4e8;
+  cursor: pointer;
+  padding: 4px;
+  transition: transform 0.12s ease;
+}
+
+.food-btn:active {
+  transform: scale(0.9);
+}
+
+.food-btn img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}

@@ -65,6 +65,13 @@ export class FoxBehavior {
     this.enter('POKED')
   }
 
+  /** Comida escolhida na bandeja. true = pode começar (main dispara o FeedingSystem). */
+  tryStartEating(): boolean {
+    if (!this.canInterrupt() || this.state === 'EATING') return false
+    this.enter('EATING')
+    return true
+  }
+
   update(dt: number): void {
     this.stateT += dt
     const { pose, expressions, particles, stats } = this.deps
@@ -93,7 +100,8 @@ export class FoxBehavior {
 
     // ---- pose/expressões por estado (um lugar só escreve os alvos) ----
     const petting = this.state === 'PETTING'
-    pose.excitement = petting ? 0.95 : 0
+    const eating = this.state === 'EATING'
+    pose.excitement = petting ? 0.95 : eating ? 0.7 : 0
     pose.lean = petting ? clamp(this.strokeNdcX, -1, 1) : 0
     expressions.smileTarget = petting ? 1 : 0
     expressions.blinkHold = petting

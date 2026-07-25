@@ -8,6 +8,8 @@ import { FoxBehavior } from './fox/behavior'
 import { Particles } from './fx/particles'
 import { Stats } from './game/state'
 import { setupPointer } from './interactions/pointer'
+import { FeedingSystem } from './interactions/feeding'
+import { createUI } from './game/ui'
 
 const DEBUG = import.meta.env.DEV || location.search.includes('debug')
 
@@ -39,6 +41,7 @@ let rig: FoxRig | null = null
 let animator: FoxAnimator | null = null
 let expressions: Expressions | null = null
 let behavior: FoxBehavior | null = null
+let feeding: FeedingSystem | null = null
 
 FoxRig.load('/models/jujuba.glb')
   .then((loaded) => {
@@ -50,6 +53,16 @@ FoxRig.load('/models/jujuba.glb')
     placeholder.geometry.dispose()
     gs.foxRoot.add(loaded.root)
     setupPointer({ canvas, camera: gs.camera, hitTarget: hitProxy, behavior, pose })
+
+    feeding = new FeedingSystem({ scene: gs.scene, rig: loaded, animator, particles, stats, pose })
+    feeding.onDone = () => behavior?.enter('IDLE')
+    void feeding.preload()
+    createUI({
+      onFeed(kind) {
+        if (!behavior || !feeding || feeding.active) return
+        if (behavior.tryStartEating() && !feeding.start(kind)) behavior.enter('IDLE')
+      },
+    })
     if (DEBUG) console.log('[jujuba] rig carregado ✓')
   })
   .catch((err) => console.error('[jujuba] falha carregando modelo:', err))
@@ -66,6 +79,7 @@ function tick() {
 
   stats.update(dt)
   if (behavior) behavior.update(dt)
+  if (feeding) feeding.update(dt)
   if (animator) animator.update(dt, pose)
   if (expressions) expressions.update(dt)
   particles.update(dt)

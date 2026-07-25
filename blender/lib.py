@@ -168,7 +168,7 @@ def set_shape(obj, name, value):
 
 # ---------------------------------------------------------------- export
 
-def export_glb(path):
+def export_glb(path, min_bytes=20_000):
     """Exporta a CENA TODA — chamar antes de criar câmera/luzes de preview."""
     os.makedirs(os.path.dirname(path), exist_ok=True)
     bpy.ops.object.select_all(action='SELECT')
@@ -186,7 +186,7 @@ def export_glb(path):
         export_yup=True,
     )
     size = os.path.getsize(path)
-    assert size > 20_000, f'glb suspeito de vazio: {size} bytes'
+    assert size > min_bytes, f'glb suspeito de vazio: {size} bytes'
     log('exportado', path, f'{size / 1024:.0f} KB')
 
 
