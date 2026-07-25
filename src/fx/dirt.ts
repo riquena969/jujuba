@@ -66,3 +66,40 @@ export class DirtLayer {
     })
   }
 }
+
+/** Farelinhos de comida na boca — aparecem conforme os dentes sujam. */
+const MOUTH_SPOTS: [number, number, number][] = [
+  [0.065, 0.695, 0.34], [-0.055, 0.66, 0.335], [0.005, 0.635, 0.33],
+]
+
+export class MouthDirt {
+  private sprites: THREE.Sprite[] = []
+
+  constructor(scene: THREE.Scene) {
+    const mat = new THREE.SpriteMaterial({
+      map: dirtTexture(),
+      depthWrite: false,
+      transparent: true,
+    })
+    for (const [x, y, z] of MOUTH_SPOTS) {
+      const s = new THREE.Sprite(mat)
+      s.position.set(x, y, z)
+      s.scale.setScalar(0.075)
+      s.visible = false
+      scene.add(s)
+      this.sprites.push(s)
+    }
+  }
+
+  get count(): number {
+    return this.sprites.filter((s) => s.visible).length
+  }
+
+  /** teeth 100 → limpo; <60 um farelo, <40 dois, <25 três. */
+  setTeeth(teeth: number): void {
+    const visible = teeth < 25 ? 3 : teeth < 40 ? 2 : teeth < 60 ? 1 : 0
+    this.sprites.forEach((s, i) => {
+      s.visible = i < visible
+    })
+  }
+}

@@ -14,6 +14,8 @@ export interface StatsData {
   happiness: number
   energy?: number
   hygiene?: number
+  /** Dentinhos: 100 = limpos. Só COMER suja (sem decay temporal). */
+  teeth?: number
   room?: string
   sleeping?: boolean
   /** Usuário desligou o mic na mão → não religar sozinho ao entrar na sala. */
@@ -31,6 +33,7 @@ export class Stats {
   happiness = 80
   energy = 80
   hygiene = 80
+  teeth = 90
   /** Sala atual (persistida). */
   room = 'sala'
   /** Sincronizado pelo main com o estado SLEEPING (persistido). */
@@ -61,6 +64,7 @@ export class Stats {
       this.happiness = clamp(d.happiness, 0, 100)
       this.energy = clamp(d.energy ?? 80, 0, 100)
       this.hygiene = clamp(d.hygiene ?? 80, 0, 100)
+      this.teeth = clamp(d.teeth ?? 90, 0, 100)
       this.room = typeof d.room === 'string' ? d.room : 'sala'
       this.sleeping = d.sleeping === true
       this.micUserOff = d.micUserOff === true
@@ -89,6 +93,7 @@ export class Stats {
         happiness: this.happiness,
         energy: this.energy,
         hygiene: this.hygiene,
+        teeth: this.teeth,
         room: this.room,
         sleeping: this.sleeping,
         micUserOff: this.micUserOff,
@@ -135,6 +140,18 @@ export class Stats {
 
   setHygiene(v: number): void {
     this.hygiene = clamp(v, 0, 100)
+    this.scheduleSave()
+    this.emit()
+  }
+
+  addTeeth(v: number): void {
+    this.teeth = clamp(this.teeth + v, 0, 100)
+    this.scheduleSave()
+    this.emit()
+  }
+
+  setTeeth(v: number): void {
+    this.teeth = clamp(v, 0, 100)
     this.scheduleSave()
     this.emit()
   }

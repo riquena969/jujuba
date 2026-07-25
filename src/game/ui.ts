@@ -15,9 +15,11 @@ interface Opts {
   /** Setinhas de sala: -1 anterior, +1 próxima. */
   onRoomChange: (dir: 1 | -1) => void
   onSleepToggle: () => void
-  /** Modo banho: troca de ferramenta e botão Voltar. */
+  /** Modo banho: troca de ferramenta e botão Voltar (compartilhado c/ escovação). */
   onBathTool: (tool: 'sponge' | 'shower') => void
   onBathExit: () => void
+  /** Escovação: botão Enxaguar. */
+  onBrushRinse: () => void
   /** Primeiro toque/batismo — gesto que destrava áudio/mic. name vem do form. */
   onFirstTap: (name?: string) => void
   /** Nome atual da raposinha (mostrado no overlay de retorno). */
@@ -35,6 +37,7 @@ export interface UI {
   /** Liga/desliga a UI do modo banho (Voltar + ferramentas, nav some). */
   setBathMode(on: boolean): void
   setBathTool(tool: 'sponge' | 'shower'): void
+  setBrushMode(on: boolean): void
 }
 
 export function createUI({
@@ -46,6 +49,7 @@ export function createUI({
   onSleepToggle,
   onBathTool,
   onBathExit,
+  onBrushRinse,
   onFirstTap,
   petName,
   firstRun,
@@ -182,6 +186,22 @@ export function createUI({
   const spongeBtn = mkTool('sponge', '🧽', 'Esponja')
   const showerBtn = mkTool('shower', '🚿', 'Ducha')
 
+  // ---- escovação: dica + Enxaguar ----
+  const brushTools = document.createElement('div')
+  brushTools.className = 'brush-tools'
+  brushTools.hidden = true
+  const brushHint = document.createElement('div')
+  brushHint.className = 'brush-hint'
+  brushHint.innerHTML = '<span>🪥</span>Esfregue a boquinha!'
+  const rinseBtn = document.createElement('button')
+  rinseBtn.className = 'tool-btn'
+  rinseBtn.dataset.tool = 'rinse'
+  rinseBtn.innerHTML = '<span>💧</span>Enxaguar'
+  rinseBtn.addEventListener('click', () => {
+    onBrushRinse()
+  })
+  brushTools.append(brushHint, rinseBtn)
+
   // ---- dormir (só no quarto) ----
   const sleepBtn = document.createElement('button')
   sleepBtn.className = 'btn btn-sleep'
@@ -192,7 +212,7 @@ export function createUI({
     onSleepToggle()
   })
 
-  hud.append(night, bars, nav, toast, carousel, micBtn, sleepBtn, backBtn, tools, overlay)
+  hud.append(night, bars, nav, toast, carousel, micBtn, sleepBtn, backBtn, tools, brushTools, overlay)
 
   return {
     setMicVisual(mode) {
@@ -240,6 +260,12 @@ export function createUI({
     setBathTool(tool) {
       spongeBtn.classList.toggle('tool-active', tool === 'sponge')
       showerBtn.classList.toggle('tool-active', tool === 'shower')
+    },
+    setBrushMode(on) {
+      backBtn.hidden = !on
+      brushTools.hidden = !on
+      nav.hidden = on
+      bars.hidden = on
     },
   }
 }

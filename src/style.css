@@ -364,10 +364,12 @@ body {
   min-height: 48px;
 }
 
-.bath-tools[hidden] {
+.bath-tools[hidden],
+.brush-tools[hidden] {
   display: none;
 }
 
+.brush-tools,
 .bath-tools {
   pointer-events: auto;
   position: absolute;
@@ -412,6 +414,22 @@ body {
   border-color: #57bcc7;
   background: #dcf5f4;
   box-shadow: 0 3px 10px rgba(64, 130, 140, 0.3);
+}
+
+.brush-hint {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  min-width: 110px;
+  padding: 8px 10px;
+  font-size: 13px;
+  font-weight: 800;
+  color: #2f7e86;
+}
+
+.brush-hint span {
+  font-size: 30px;
 }
 
 .tool-cursor {

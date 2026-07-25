@@ -207,6 +207,92 @@ export function burp(): void {
   lfo.stop(t + 0.36)
 }
 
+/** Escovadinha nos dentes: chiado rápido mais agudo que a esponja. */
+export function brushScrub(): void {
+  const a = getAudio()
+  if (!a) return
+  const { ctx, master } = a
+  const t = ctx.currentTime
+  const len = 0.11
+  const buf = ctx.createBuffer(1, Math.ceil(len * ctx.sampleRate), ctx.sampleRate)
+  const data = buf.getChannelData(0)
+  for (let i = 0; i < data.length; i++) data[i] = Math.random() * 2 - 1
+  const src = ctx.createBufferSource()
+  src.buffer = buf
+  const bp = ctx.createBiquadFilter()
+  bp.type = 'bandpass'
+  bp.Q.value = 3
+  bp.frequency.setValueAtTime(2100, t)
+  bp.frequency.exponentialRampToValueAtTime(3100, t + len)
+  const g = env(ctx, 0.22, 0.01, 0.1)
+  src.connect(bp).connect(g).connect(master)
+  src.start(t)
+}
+
+/** Gargarejo borbulhante (~1.2s). */
+export function gargle(): void {
+  const a = getAudio()
+  if (!a) return
+  const { ctx, master } = a
+  const t = ctx.currentTime
+  const len = 1.2
+  const buf = ctx.createBuffer(1, Math.ceil(len * ctx.sampleRate), ctx.sampleRate)
+  const data = buf.getChannelData(0)
+  for (let i = 0; i < data.length; i++) data[i] = Math.random() * 2 - 1
+  const src = ctx.createBufferSource()
+  src.buffer = buf
+  const bp = ctx.createBiquadFilter()
+  bp.type = 'bandpass'
+  bp.frequency.value = 620
+  bp.Q.value = 2.5
+  // borbulhas: tremolo rápido irregular
+  const mod = ctx.createGain()
+  mod.gain.value = 0.5
+  const lfo = ctx.createOscillator()
+  lfo.frequency.value = 15
+  const lfoDepth = ctx.createGain()
+  lfoDepth.gain.value = 0.45
+  lfo.connect(lfoDepth).connect(mod.gain)
+  const out = ctx.createGain()
+  out.gain.setValueAtTime(0.0001, t)
+  out.gain.exponentialRampToValueAtTime(0.3, t + 0.1)
+  out.gain.setValueAtTime(0.3, t + len - 0.15)
+  out.gain.exponentialRampToValueAtTime(0.0001, t + len)
+  src.connect(bp).connect(mod).connect(out).connect(master)
+  src.start(t)
+  lfo.start(t)
+  lfo.stop(t + len)
+}
+
+/** Cuspidinha (ptu!) + respingo. */
+export function spit(): void {
+  const a = getAudio()
+  if (!a) return
+  const { ctx, master } = a
+  const t = ctx.currentTime
+  const osc = ctx.createOscillator()
+  osc.type = 'triangle'
+  osc.frequency.setValueAtTime(900, t)
+  osc.frequency.exponentialRampToValueAtTime(250, t + 0.1)
+  const g = env(ctx, 0.25, 0.008, 0.1)
+  osc.connect(g).connect(master)
+  osc.start(t)
+  osc.stop(t + 0.12)
+  // respingo
+  const len = 0.12
+  const buf = ctx.createBuffer(1, Math.ceil(len * ctx.sampleRate), ctx.sampleRate)
+  const data = buf.getChannelData(0)
+  for (let i = 0; i < data.length; i++) data[i] = (Math.random() * 2 - 1) * (1 - i / data.length)
+  const noise = ctx.createBufferSource()
+  noise.buffer = buf
+  const lp = ctx.createBiquadFilter()
+  lp.type = 'lowpass'
+  lp.frequency.value = 1600
+  const ng = env(ctx, 0.2, 0.05, 0.1)
+  noise.connect(lp).connect(ng).connect(master)
+  noise.start(t + 0.06)
+}
+
 /** Jingle de "ficou limpinha!": arpejo brilhante subindo. */
 export function sparkle(): void {
   const a = getAudio()

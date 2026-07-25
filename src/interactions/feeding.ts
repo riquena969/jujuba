@@ -235,6 +235,8 @@ export class FeedingSystem {
             animator.bounce()
             stats.addHunger(30)
             stats.addHappiness(4)
+            // comer suja os dentinhos (bebida menos) — escova na pia!
+            stats.addTeeth(drinking ? -10 : -15)
             // barriga estufada? arrotinho a caminho
             this.pendingBurp = stats.hunger >= 99.5
           } else if (!drinking) {

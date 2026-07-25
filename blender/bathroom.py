@@ -87,6 +87,38 @@ def build_bath_set():
     lib.join(parts, 'BathSet')
 
 
+def build_brush_set():
+    """Set da escovação: pia grandona na frente (esconde a parte de baixo dela)
+    + espelho arredondado atrás emoldurando a cabeça."""
+    M = mats()
+    parts = [
+        # bancada/pia na frente
+        lib.box('sink_counter', (1.05, 0.55, 0.42), (0, -0.18, 0.24), material=M['white'],
+                bevel=0.05),
+        lib.sphere('sink_bowl', 0.30, (0, -0.22, 0.48), scale=(1.15, 0.75, 0.28),
+                   material=lib.mat('BowlInner', '#DFF0F2', roughness=0.3)),
+        lib.cylinder('sink_faucet', 0.028, 0.22, (0.32, -0.30, 0.58), material=M['metal']),
+        lib.cylinder('sink_spout', 0.022, 0.14, (0.32, -0.38, 0.66), material=M['metal'],
+                     rot=(D(90), 0, 0)),
+        # espelho atrás (moldura + vidro)
+        lib.box('mirror_frame', (0.98, 0.06, 0.78), (0, 0.5, 1.02), material=M['white'],
+                bevel=0.04),
+        lib.box('mirror_glass', (0.86, 0.03, 0.66), (0, 0.47, 1.02),
+                material=lib.mat('MirrorBlue', '#CBE9F2', roughness=0.05), bevel=0.02),
+        # copinho + pasta na bancada
+        lib.cylinder('cup', 0.055, 0.12, (-0.38, -0.3, 0.51),
+                     material=lib.mat('CupMint', '#A8E6D5', roughness=0.5)),
+        lib.box('paste', (0.16, 0.05, 0.05), (0.05, -0.34, 0.47),
+                material=lib.mat('PasteRed', '#FF6B6B', roughness=0.5), bevel=0.02),
+    ]
+    for sx in (1, -1):
+        for sy in (1, -1):
+            parts.append(lib.sphere(f'sink_foot_{sx}_{sy}', 0.055,
+                                    (sx * 0.44, -0.18 + sy * 0.2, 0.05),
+                                    material=M['gold'], segments=12, rings=8))
+    lib.join(parts, 'BrushSet')
+
+
 if __name__ == '__main__':
     lib.reset_scene()
     build_room()
@@ -101,4 +133,11 @@ if __name__ == '__main__':
     lib.setup_render(res=(640, 500))
     cam = lib.add_preview_rig()
     lib.render_shot(cam, 'bath-set', (0, -2.6, 0.95), (0, 0, 0.35))
+
+    lib.reset_scene()
+    build_brush_set()
+    lib.export_glb(os.path.join(lib.MODELS_DIR, 'brush-set.glb'), min_bytes=2_000)
+    lib.setup_render(res=(640, 500))
+    cam = lib.add_preview_rig()
+    lib.render_shot(cam, 'brush-set', (0, -2.6, 0.95), (0, 0, 0.5))
     lib.log('BATHROOM OK')

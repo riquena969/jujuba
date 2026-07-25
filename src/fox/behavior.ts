@@ -17,6 +17,7 @@ export type FoxState =
   | 'REPLAYING'
   | 'SLEEPING'
   | 'BATHING'
+  | 'BRUSHING'
 
 interface Deps {
   rig: FoxRig
@@ -53,7 +54,8 @@ export class FoxBehavior {
       this.state !== 'REPLAYING' &&
       this.state !== 'DRAGGING' &&
       this.state !== 'SLEEPING' &&
-      this.state !== 'BATHING'
+      this.state !== 'BATHING' &&
+      this.state !== 'BRUSHING'
     )
   }
 
@@ -101,6 +103,13 @@ export class FoxBehavior {
   tryStartBath(): boolean {
     if (this.state !== 'IDLE') return false
     this.enter('BATHING')
+    return true
+  }
+
+  /** Tap na pia: entra na escovação (só a partir do IDLE). */
+  tryStartBrush(): boolean {
+    if (this.state !== 'IDLE') return false
+    this.enter('BRUSHING')
     return true
   }
 
@@ -176,7 +185,7 @@ export class FoxBehavior {
     const replaying = this.state === 'REPLAYING'
     const dragging = this.state === 'DRAGGING'
     const sleeping = this.state === 'SLEEPING'
-    const bathing = this.state === 'BATHING'
+    const bathing = this.state === 'BATHING' || this.state === 'BRUSHING'
     this.bathHappy = damp(this.bathHappy, 0, 1.6, dt)
     pose.excitement = petting
       ? 0.95

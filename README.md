@@ -5,10 +5,12 @@
 
 Bichinho virtual estilo *My Talking Tom*, rodando **no browser do celular**. Uma
 raposinha chibi (você escolhe o nome — padrão Foxy) que reage a carinho, come, dorme,
-**toma banho** e **imita a sua voz** com vozinha aguda — igual ao Talking Tom raiz.
-Quatro cômodos (🍳 cozinha, 🛋️ sala, 🌙 quarto, 🛁 banheiro) nas setinhas do topo.
-Ela vai se sujando com o tempo (manchinhas + barra 🧼) — toque na banheira, esfregue
-com a esponja, enxágue com a ducha e ganhe um jingle de limpinha. ✨
+**toma banho**, **escova os dentes** e **imita a sua voz** com vozinha aguda — igual ao
+Talking Tom raiz. Quatro cômodos (🍳 cozinha, 🛋️ sala, 🌙 quarto, 🛁 banheiro) nas
+setinhas do topo. Ela se suja com o tempo (manchinhas + barra 🧼) e comer suja os
+dentinhos (farelos + dentes amarelando) — **banheira e pia brilham piscando quando
+precisam de você**. Modelo 3D v2: malha única gerada por script (bmesh + subsurf),
+olhos de íris âmbar, pálpebras e sobrancelhas de verdade, boca com dentes e língua.
 
 Tudo 3D (Three.js), com o modelo **gerado 100% por script no Blender** (nada de assets
 comprados): malha, ossos, expressões e ícones saem de `blender/*.py`.
@@ -91,6 +93,6 @@ npm run test:e2e   # Playwright + mic FAKE (WAV sintético de fala) — cobre ca
 
 ## Roadmap
 
-**Raposinha v2** (mais detalhada, estilo Angela — plano em [docs/raposinha-v2.md](docs/raposinha-v2.md)) ·
-v0.4 escovar os dentes (na pia do banheiro!) · v0.5 roupinhas + guarda-roupa ·
-v0.6 bolinha + moedas · depois: minigames, modo offline, conversa de verdade via IA.
+v0.5 roupinhas + guarda-roupa · v0.6 bolinha + moedas · depois: minigames, modo
+offline, conversa de verdade via IA. (Raposinha v2 e escovação: entregues ✓ — o plano
+da v2 está em [docs/raposinha-v2.md](docs/raposinha-v2.md).)

@@ -11,9 +11,11 @@ import { setupPointer } from './interactions/pointer'
 import { FeedingSystem } from './interactions/feeding'
 import { VoiceSystem } from './interactions/voice'
 import { BathSystem } from './interactions/bath'
+import { BrushSystem } from './interactions/brush'
+import { NeedGlow } from './fx/needglow'
 import { createUI } from './game/ui'
 import { Rooms, type RoomId } from './game/rooms'
-import { DirtLayer } from './fx/dirt'
+import { DirtLayer, MouthDirt } from './fx/dirt'
 import { asset } from './utils/assets'
 
 const DEBUG = import.meta.env.DEV || location.search.includes('debug')
@@ -43,6 +45,9 @@ const stats = new Stats()
 const particles = new Particles(gs.scene)
 const dirt = new DirtLayer(gs.scene)
 dirt.setHygiene(stats.hygiene)
+const mouthDirt = new MouthDirt(gs.scene)
+mouthDirt.setTeeth(stats.teeth)
+const needGlow = new NeedGlow()
 
 let rig: FoxRig | null = null
 let animator: FoxAnimator | null = null
@@ -51,6 +56,7 @@ let behavior: FoxBehavior | null = null
 let feeding: FeedingSystem | null = null
 let voice: VoiceSystem | null = null
 let bath: BathSystem | null = null
+let brush: BrushSystem | null = null
 
 const rooms = new Rooms(gs, stats.room as RoomId)
 void rooms.load()
@@ -82,6 +88,8 @@ FoxRig.load(asset('models/jujuba.glb'))
     voice = new VoiceSystem({ behavior, pose })
     bath = new BathSystem({ gs, rooms, behavior, particles, stats, hitProxy, canvas })
     void bath.preload()
+    brush = new BrushSystem({ gs, rooms, behavior, particles, stats, pose, hitProxy, canvas })
+    void brush.preload()
     const ui = createUI({
       onFoodDragStart(kind, x, y) {
         if (!behavior || !feeding || feeding.active) return false
@@ -123,7 +131,11 @@ FoxRig.load(asset('models/jujuba.glb'))
         ui.setBathTool(tool)
       },
       onBathExit() {
-        bath?.exit()
+        if (bath?.active) bath.exit()
+        else brush?.exit()
+      },
+      onBrushRinse() {
+        brush?.rinse()
       },
       onFirstTap(name) {
         if (name) {
@@ -158,11 +170,19 @@ FoxRig.load(asset('models/jujuba.glb'))
       )
     }
     behavior.onState(syncMicVisual)
+    const applyTeethTint = (teeth: number) => {
+      if (!rig?.teethMaterial) return
+      const k = 1 - teeth / 100 // 0 limpo → 1 encardido
+      rig.teethMaterial.color.setRGB(1 - k * 0.2, 1 - k * 0.34, 1 - k * 0.62)
+    }
     stats.onChange((s) => {
       ui.updateBars(s.hunger, s.happiness, s.energy, s.hygiene)
       dirt.setHygiene(s.hygiene)
+      mouthDirt.setTeeth(s.teeth)
+      applyTeethTint(s.teeth)
     })
     ui.updateBars(stats.hunger, stats.happiness, stats.energy, stats.hygiene)
+    applyTeethTint(stats.teeth)
 
     // salas: visual + persistência + mic só na sala de estar
     rooms.onChange = (room) => {
@@ -184,6 +204,8 @@ FoxRig.load(asset('models/jujuba.glb'))
       ui.setBathTool(bath!.tool)
     }
     bath.onExit = () => ui.setBathMode(false)
+    brush.onEnter = () => ui.setBrushMode(true)
+    brush.onExit = () => ui.setBrushMode(false)
 
     // dormir: filtro noturno + luz baixa (e restaura sono salvo)
     behavior.onState((s) => {
@@ -213,6 +235,13 @@ function tick() {
   if (feeding) feeding.update(dt)
   if (voice) voice.update()
   if (bath) bath.update(dt)
+  if (brush) brush.update(dt)
+  needGlow.update(
+    dt,
+    rooms.current === 'banheiro' ? rooms.currentGroup() : undefined,
+    stats.hygiene < 40,
+    stats.teeth < 40,
+  )
   if (animator) animator.update(dt, pose)
   if (expressions) expressions.update(dt)
   particles.update(dt)
@@ -260,7 +289,12 @@ if (DEBUG) {
       get feeding() {
         return feeding
       },
+      get brush() {
+        return brush
+      },
       dirt,
+      mouthDirt,
+      needGlow,
       get elapsed() {
         return elapsed
       },
