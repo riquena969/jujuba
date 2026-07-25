@@ -10,6 +10,8 @@ const https =
     : undefined
 
 export default defineConfig({
+  // GitHub Pages serve o app em /jujuba/ (CI seta GITHUB_ACTIONS)
+  base: process.env.GITHUB_ACTIONS ? '/jujuba/' : '/',
   server: { host: true, https },
   preview: { host: true, https },
 })

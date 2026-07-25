@@ -2,6 +2,7 @@ import * as THREE from 'three'
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js'
 import type { GameScene, RoomLook } from '../scene'
 import { DEFAULT_LOOK } from '../scene'
+import { asset } from '../utils/assets'
 
 export type RoomId = 'cozinha' | 'sala' | 'quarto'
 
@@ -50,7 +51,7 @@ export class Rooms {
     const loader = new GLTFLoader()
     await Promise.all(
       ROOM_ORDER.map(async (id) => {
-        const gltf = await loader.loadAsync(`/models/room-${id}.glb`)
+        const gltf = await loader.loadAsync(asset(`models/room-${id}.glb`))
         gltf.scene.visible = false
         this.gs.scene.add(gltf.scene)
         this.groups.set(id, gltf.scene)

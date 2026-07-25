@@ -2,6 +2,7 @@ import type { FoxBehavior } from '../fox/behavior'
 import type { PoseInput } from '../fox/animations'
 import { getAudio, unlockAudio } from '../audio/context'
 import { clamp } from '../utils/math'
+import { asset } from '../utils/assets'
 
 const CHIPMUNK_RATE = 1.5
 
@@ -48,7 +49,7 @@ export class VoiceSystem {
     this.source = ctx.createMediaStreamSource(this.stream)
 
     if (ctx.audioWorklet) {
-      await ctx.audioWorklet.addModule('/worklets/recorder.js')
+      await ctx.audioWorklet.addModule(asset('worklets/recorder.js'))
       this.worklet = new AudioWorkletNode(ctx, 'jujuba-recorder', {
         numberOfInputs: 1,
         numberOfOutputs: 0,

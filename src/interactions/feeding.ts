@@ -6,6 +6,7 @@ import type { Particles } from '../fx/particles'
 import type { Stats } from '../game/state'
 import { chomp, gulp } from '../audio/sfx'
 import { clamp, damp } from '../utils/math'
+import { asset } from '../utils/assets'
 
 export type FoodKind = 'cookie' | 'apple' | 'drumstick'
 export const FOOD_KINDS: FoodKind[] = ['cookie', 'apple', 'drumstick']
@@ -59,7 +60,7 @@ export class FeedingSystem {
     const loader = new GLTFLoader()
     await Promise.all(
       FOOD_KINDS.map(async (kind) => {
-        const gltf = await loader.loadAsync(`/models/${kind}.glb`)
+        const gltf = await loader.loadAsync(asset(`models/${kind}.glb`))
         this.templates.set(kind, gltf.scene)
       }),
     )

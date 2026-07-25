@@ -1,8 +1,12 @@
 # Jujuba 🦊
 
+> 🎮 **Jogar agora:** <https://riquena969.github.io/jujuba/> — abre direto no celular!
+> (é HTTPS de verdade, então o microfone funciona no iPhone/Android sem configurar nada)
+
 Bichinho virtual estilo *My Talking Tom*, rodando **no browser do celular**. A Jujuba é
-uma raposinha chibi que reage a carinho, come, e **imita a sua voz** com vozinha aguda —
-igual ao Talking Tom raiz: com o mic ligado ela detecta quando você fala, grava e repete.
+uma raposinha chibi que reage a carinho, come, dorme, e **imita a sua voz** com vozinha
+aguda — igual ao Talking Tom raiz: com o mic ligado ela detecta quando você fala, grava
+e repete. Três cômodos (🍳 cozinha, 🛋️ sala, 🌙 quarto) trocando nas setinhas do topo.
 
 Tudo 3D (Three.js), com o modelo **gerado 100% por script no Blender** (nada de assets
 comprados): malha, ossos, expressões e ícones saem de `blender/*.py`.
@@ -14,7 +18,12 @@ npm install
 npm run dev          # abre em https://localhost:5173 (ou http se não houver certs/)
 ```
 
-## Testar no iPhone (mic exige HTTPS "de verdade")
+## Deploy
+
+Push na `main` → GitHub Actions builda e publica no GitHub Pages automaticamente
+(`.github/workflows/deploy.yml`; o `vite.config.ts` usa `base: '/jujuba/'` no CI).
+
+## Testar o DEV local no iPhone (mic exige HTTPS "de verdade")
 
 O Safari do iOS **recusa o microfone com certificado self-signed**, mesmo aceitando o
 aviso. O caminho é o [mkcert](https://github.com/FiloSottile/mkcert):

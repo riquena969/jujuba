@@ -12,6 +12,7 @@ import { FeedingSystem } from './interactions/feeding'
 import { VoiceSystem } from './interactions/voice'
 import { createUI } from './game/ui'
 import { Rooms, type RoomId } from './game/rooms'
+import { asset } from './utils/assets'
 
 const DEBUG = import.meta.env.DEV || location.search.includes('debug')
 
@@ -49,7 +50,7 @@ let voice: VoiceSystem | null = null
 const rooms = new Rooms(gs, stats.room as RoomId)
 void rooms.load()
 
-FoxRig.load('/models/jujuba.glb')
+FoxRig.load(asset('models/jujuba.glb'))
   .then((loaded) => {
     rig = loaded
     animator = new FoxAnimator(loaded)

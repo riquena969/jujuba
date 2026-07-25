@@ -2,6 +2,7 @@ import { FOOD_KINDS, type FoodKind } from '../interactions/feeding'
 import { ROOM_META, type RoomId } from './rooms'
 import { unlockAudio } from '../audio/context'
 import { pop } from '../audio/sfx'
+import { asset } from '../utils/assets'
 
 interface Opts {
   /** Dedo desceu no item central da roleta. true = arrasto autorizado. */
@@ -124,7 +125,7 @@ export function createUI({
   function renderCarousel() {
     const kinds = [foodAt(-1), foodAt(0), foodAt(1)]
     slots.forEach(({ btn, img }, i) => {
-      img.src = `/icons/food-${kinds[i]}.png`
+      img.src = asset(`icons/food-${kinds[i]}.png`)
       img.alt = FOOD_LABELS[kinds[i]]
       btn.setAttribute('aria-label', FOOD_LABELS[kinds[i]])
     })
