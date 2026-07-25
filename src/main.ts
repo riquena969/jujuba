@@ -9,6 +9,7 @@ import { Particles } from './fx/particles'
 import { Stats } from './game/state'
 import { setupPointer } from './interactions/pointer'
 import { FeedingSystem } from './interactions/feeding'
+import { VoiceSystem } from './interactions/voice'
 import { createUI } from './game/ui'
 
 const DEBUG = import.meta.env.DEV || location.search.includes('debug')
@@ -42,6 +43,7 @@ let animator: FoxAnimator | null = null
 let expressions: Expressions | null = null
 let behavior: FoxBehavior | null = null
 let feeding: FeedingSystem | null = null
+let voice: VoiceSystem | null = null
 
 FoxRig.load('/models/jujuba.glb')
   .then((loaded) => {
@@ -57,12 +59,36 @@ FoxRig.load('/models/jujuba.glb')
     feeding = new FeedingSystem({ scene: gs.scene, rig: loaded, animator, particles, stats, pose })
     feeding.onDone = () => behavior?.enter('IDLE')
     void feeding.preload()
-    createUI({
+    voice = new VoiceSystem({ behavior, pose })
+    const ui = createUI({
       onFeed(kind) {
         if (!behavior || !feeding || feeding.active) return
         if (behavior.tryStartEating() && !feeding.start(kind)) behavior.enter('IDLE')
       },
+      async onMicToggle() {
+        if (!voice) return false
+        if (voice.enabled) {
+          voice.disable()
+        } else {
+          await voice.enable()
+        }
+        syncMicVisual()
+        return voice.enabled
+      },
     })
+    const syncMicVisual = () => {
+      if (!voice || !behavior) return
+      ui.setMicVisual(
+        !voice.enabled
+          ? 'off'
+          : behavior.state === 'LISTENING'
+            ? 'listening'
+            : behavior.state === 'REPLAYING'
+              ? 'replaying'
+              : 'on',
+      )
+    }
+    behavior.onState(syncMicVisual)
     if (DEBUG) console.log('[jujuba] rig carregado ✓')
   })
   .catch((err) => console.error('[jujuba] falha carregando modelo:', err))
@@ -80,6 +106,7 @@ function tick() {
   stats.update(dt)
   if (behavior) behavior.update(dt)
   if (feeding) feeding.update(dt)
+  if (voice) voice.update()
   if (animator) animator.update(dt, pose)
   if (expressions) expressions.update(dt)
   particles.update(dt)
@@ -114,6 +141,9 @@ if (DEBUG) {
       },
       get rigReady() {
         return rig !== null
+      },
+      get voice() {
+        return voice
       },
       get elapsed() {
         return elapsed

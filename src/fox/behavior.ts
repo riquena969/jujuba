@@ -25,8 +25,13 @@ export class FoxBehavior {
   private strokeNdcX = 0
   private heartTimer = 0
   private purr = new Purr()
+  private stateListeners: ((s: FoxState) => void)[] = []
 
   constructor(private deps: Deps) {}
+
+  onState(fn: (s: FoxState) => void): void {
+    this.stateListeners.push(fn)
+  }
 
   /** EATING e REPLAYING são ininterrompíveis. */
   private canInterrupt(): boolean {
@@ -48,6 +53,7 @@ export class FoxBehavior {
       squeak()
       this.deps.stats.addHappiness(1)
     }
+    for (const fn of this.stateListeners) fn(next)
   }
 
   /** Chamado pelo pointer a cada trecho de "esfregada" válida sobre a raposa. */
@@ -94,6 +100,10 @@ export class FoxBehavior {
       case 'POKED':
         if (this.stateT > 0.55) this.enter('IDLE')
         break
+      case 'LISTENING':
+        // trava de segurança (worklet limita em 10 s)
+        if (this.stateT > 12) this.enter('IDLE')
+        break
       default:
         break
     }
@@ -101,10 +111,14 @@ export class FoxBehavior {
     // ---- pose/expressões por estado (um lugar só escreve os alvos) ----
     const petting = this.state === 'PETTING'
     const eating = this.state === 'EATING'
-    pose.excitement = petting ? 0.95 : eating ? 0.7 : 0
+    const listening = this.state === 'LISTENING'
+    const replaying = this.state === 'REPLAYING'
+    pose.excitement = petting ? 0.95 : eating ? 0.7 : replaying ? 0.5 : listening ? 0.3 : 0
     pose.lean = petting ? clamp(this.strokeNdcX, -1, 1) : 0
+    pose.earsPerk = listening ? 1 : 0
+    pose.headTilt = listening ? 0.14 : 0
     expressions.smileTarget = petting ? 1 : 0
     expressions.blinkHold = petting
-    // earsPerk/headTilt/jawOpen: escritos pela voz (M6) e comida (M5)
+    // jawOpen: escrito pela comida (FeedingSystem) e pela voz (VoiceSystem)
   }
 }

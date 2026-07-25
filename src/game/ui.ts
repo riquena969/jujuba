@@ -4,6 +4,8 @@ import { pop } from '../audio/sfx'
 
 interface Opts {
   onFeed: (kind: FoodKind) => void
+  /** Toggle do mic; retorna se ficou ligado. */
+  onMicToggle: () => Promise<boolean>
 }
 
 const FOOD_LABELS: Record<FoodKind, string> = {
@@ -14,9 +16,11 @@ const FOOD_LABELS: Record<FoodKind, string> = {
 
 export interface UI {
   hideTray(): void
+  /** Reflete o estado da voz no botão do mic. */
+  setMicVisual(mode: 'off' | 'on' | 'listening' | 'replaying'): void
 }
 
-export function createUI({ onFeed }: Opts): UI {
+export function createUI({ onFeed, onMicToggle }: Opts): UI {
   const hud = document.querySelector<HTMLDivElement>('#hud')!
 
   const tray = document.createElement('div')
@@ -48,11 +52,30 @@ export function createUI({ onFeed }: Opts): UI {
     tray.hidden = !tray.hidden
   })
 
-  hud.append(tray, eatBtn)
+  const micBtn = document.createElement('button')
+  micBtn.className = 'btn btn-mic'
+  micBtn.textContent = '🎤 Falar'
+  micBtn.addEventListener('pointerdown', () => unlockAudio())
+  micBtn.addEventListener('click', () => {
+    pop()
+    micBtn.disabled = true
+    void onMicToggle().finally(() => {
+      micBtn.disabled = false
+    })
+  })
+
+  hud.append(tray, eatBtn, micBtn)
 
   return {
     hideTray() {
       tray.hidden = true
+    },
+    setMicVisual(mode) {
+      micBtn.classList.toggle('mic-on', mode !== 'off')
+      micBtn.classList.toggle('mic-listening', mode === 'listening')
+      micBtn.classList.toggle('mic-replaying', mode === 'replaying')
+      micBtn.textContent =
+        mode === 'off' ? '🎤 Falar' : mode === 'listening' ? '👂 Ouvindo…' : mode === 'replaying' ? '🗣️ …' : '🎤 Ligado'
     },
   }
 }
