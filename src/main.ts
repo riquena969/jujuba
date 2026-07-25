@@ -1,9 +1,13 @@
 import './style.css'
 import * as THREE from 'three'
-import { createScene } from './scene'
+import { createScene, FOX_HEIGHT } from './scene'
 import { FoxRig } from './fox/rig'
 import { FoxAnimator, createPoseInput } from './fox/animations'
 import { Expressions } from './fox/expressions'
+import { FoxBehavior } from './fox/behavior'
+import { Particles } from './fx/particles'
+import { Stats } from './game/state'
+import { setupPointer } from './interactions/pointer'
 
 const DEBUG = import.meta.env.DEV || location.search.includes('debug')
 
@@ -18,35 +22,37 @@ const placeholder = new THREE.Mesh(
 placeholder.position.y = 0.595
 gs.foxRoot.add(placeholder)
 
-// ---- Estado global do jogo (cresce nos próximos milestones) ----
+// Proxy invisível de colisão (raycast estável e barato numa cápsula)
+const hitProxy = new THREE.Mesh(
+  new THREE.CapsuleGeometry(0.36, FOX_HEIGHT - 0.72, 6, 12),
+  new THREE.MeshBasicMaterial({ transparent: true, opacity: 0, depthWrite: false }),
+)
+hitProxy.position.y = FOX_HEIGHT / 2
+gs.foxRoot.add(hitProxy)
+
+// ---- Sistemas ----
 const pose = createPoseInput()
+const stats = new Stats()
+const particles = new Particles(gs.scene)
+
 let rig: FoxRig | null = null
 let animator: FoxAnimator | null = null
 let expressions: Expressions | null = null
+let behavior: FoxBehavior | null = null
 
 FoxRig.load('/models/jujuba.glb')
   .then((loaded) => {
     rig = loaded
     animator = new FoxAnimator(loaded)
     expressions = new Expressions(loaded)
+    behavior = new FoxBehavior({ animator, expressions, particles, stats, pose })
     gs.foxRoot.remove(placeholder)
     placeholder.geometry.dispose()
     gs.foxRoot.add(loaded.root)
+    setupPointer({ canvas, camera: gs.camera, hitTarget: hitProxy, behavior, pose })
     if (DEBUG) console.log('[jujuba] rig carregado ✓')
   })
   .catch((err) => console.error('[jujuba] falha carregando modelo:', err))
-
-// ---- Olhar segue o dedo/mouse (interações completas no M4) ----
-let gazeIdleTimer: ReturnType<typeof setTimeout> | undefined
-function trackPointer(e: PointerEvent) {
-  pose.gazeX = (e.clientX / innerWidth) * 2 - 1
-  pose.gazeY = -((e.clientY / innerHeight) * 2 - 1)
-  pose.gazeActive = true
-  clearTimeout(gazeIdleTimer)
-  gazeIdleTimer = setTimeout(() => (pose.gazeActive = false), 2500)
-}
-addEventListener('pointermove', trackPointer)
-addEventListener('pointerdown', trackPointer)
 
 // ---- Game loop ----
 let last = performance.now()
@@ -58,8 +64,11 @@ function tick() {
   last = now
   elapsed += dt
 
+  stats.update(dt)
+  if (behavior) behavior.update(dt)
   if (animator) animator.update(dt, pose)
   if (expressions) expressions.update(dt)
+  particles.update(dt)
 
   gs.renderer.render(gs.scene, gs.camera)
 }
@@ -82,17 +91,18 @@ if (DEBUG) {
   Object.defineProperty(window, '__jujuba', {
     value: {
       pose,
+      stats,
+      get state() {
+        return behavior?.state ?? 'LOADING'
+      },
+      get behavior() {
+        return behavior
+      },
       get rigReady() {
         return rig !== null
       },
       get elapsed() {
         return elapsed
-      },
-      get animator() {
-        return animator
-      },
-      get expressions() {
-        return expressions
       },
       renderer: gs.renderer,
     },

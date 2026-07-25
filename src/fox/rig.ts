@@ -33,7 +33,9 @@ export class FoxRig {
   readonly bones = {} as Record<BoneName, THREE.Bone>
   readonly rest = {} as Record<BoneName, RestPose>
   readonly axes = {} as Record<BoneName, WorldAxes>
-  private morphs = {} as Record<MorphName, MorphRef>
+  /** Lista por morph: glTF divide malha multi-material em vários primitives,
+   *  cada um com o próprio morphTargetDictionary — escrevemos em todos. */
+  private morphs = { blinkL: [], blinkR: [], smile: [] } as Record<MorphName, MorphRef[]>
   private readonly tmpQ = new THREE.Quaternion()
 
   private constructor(readonly root: THREE.Group) {}
@@ -74,11 +76,11 @@ export class FoxRig {
       const dict = obj.morphTargetDictionary
       if (!dict) return
       for (const name of MORPH_NAMES) {
-        if (name in dict) rig.morphs[name] = { mesh: obj, index: dict[name] }
+        if (name in dict) rig.morphs[name].push({ mesh: obj, index: dict[name] })
       }
     })
     for (const name of MORPH_NAMES) {
-      if (!rig.morphs[name]) missingMorphs.push(name)
+      if (rig.morphs[name].length === 0) missingMorphs.push(name)
     }
 
     if (missingBones.length || missingMorphs.length) {
@@ -112,8 +114,9 @@ export class FoxRig {
   }
 
   setMorph(name: MorphName, value: number): void {
-    const { mesh, index } = this.morphs[name]
-    mesh.morphTargetInfluences![index] = value
+    for (const { mesh, index } of this.morphs[name]) {
+      mesh.morphTargetInfluences![index] = value
+    }
   }
 
   /** Posição de mundo da boca (âncora pra comida/partículas). */
