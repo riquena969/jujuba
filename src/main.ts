@@ -56,14 +56,35 @@ FoxRig.load('/models/jujuba.glb')
     gs.foxRoot.add(loaded.root)
     setupPointer({ canvas, camera: gs.camera, hitTarget: hitProxy, behavior, pose })
 
-    feeding = new FeedingSystem({ scene: gs.scene, rig: loaded, animator, particles, stats, pose })
+    feeding = new FeedingSystem({
+      scene: gs.scene,
+      camera: gs.camera,
+      rig: loaded,
+      animator,
+      particles,
+      stats,
+      pose,
+    })
     feeding.onDone = () => behavior?.enter('IDLE')
+    feeding.onSnap = () => behavior?.enter('EATING')
+    feeding.onCancel = () => behavior?.enter('IDLE')
     void feeding.preload()
     voice = new VoiceSystem({ behavior, pose })
     const ui = createUI({
-      onFeed(kind) {
-        if (!behavior || !feeding || feeding.active) return
-        if (behavior.tryStartEating() && !feeding.start(kind)) behavior.enter('IDLE')
+      onFoodDragStart(kind, x, y) {
+        if (!behavior || !feeding || feeding.active) return false
+        if (!behavior.tryStartDragging()) return false
+        if (!feeding.beginDrag(kind, x, y)) {
+          behavior.enter('IDLE')
+          return false
+        }
+        return true
+      },
+      onFoodDragMove(x, y) {
+        feeding?.moveDrag(x, y)
+      },
+      onFoodDragEnd(tap) {
+        feeding?.endDrag(tap)
       },
       async onMicToggle() {
         if (!voice) return false

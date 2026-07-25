@@ -72,7 +72,8 @@ npm run test:e2e   # Playwright + mic FAKE (WAV sintético de fala) — cobre ca
   AudioWorklet (pre-roll 250 ms, cap 10 s), playback com `playbackRate 1.5` (chipmunk),
   mandíbula sincronizada por Analyser, anti-feedback (mic desligado durante o replay).
 - `src/interactions/{pointer,feeding}.ts` — carinho×poke por classificador de gesto;
-  comida voa até a boca com 3 mordidas + migalhas.
+  comida é **arrastada da bandeja até a boca** (boca-imã: abre por proximidade e
+  abocanha pertinho; soltar longe cancela; tap = voo automático), 3 mordidas + migalhas.
 - `src/game/state.ts` — fome/alegria com decay (também offline via `lastSeen`),
   persistência em `localStorage`.
 - Sons: 100% sintetizados via WebAudio (`src/audio/sfx.ts`) — zero arquivos de áudio.

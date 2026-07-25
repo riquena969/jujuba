@@ -3,7 +3,11 @@ import { unlockAudio } from '../audio/context'
 import { pop } from '../audio/sfx'
 
 interface Opts {
-  onFeed: (kind: FoodKind) => void
+  /** Dedo desceu num item da bandeja. true = arrasto autorizado. */
+  onFoodDragStart: (kind: FoodKind, x: number, y: number) => boolean
+  onFoodDragMove: (x: number, y: number) => void
+  /** Dedo soltou; tap = clique rapidinho (voo automático). */
+  onFoodDragEnd: (tap: boolean) => void
   /** Toggle do mic; retorna se ficou ligado. */
   onMicToggle: () => Promise<boolean>
 }
@@ -21,7 +25,7 @@ export interface UI {
   updateBars(hunger: number, happiness: number): void
 }
 
-export function createUI({ onFeed, onMicToggle }: Opts): UI {
+export function createUI({ onFoodDragStart, onFoodDragMove, onFoodDragEnd, onMicToggle }: Opts): UI {
   const hud = document.querySelector<HTMLDivElement>('#hud')!
 
   // ---- overlay de primeiro toque (destrava o áudio no iOS) ----
@@ -57,13 +61,38 @@ export function createUI({ onFeed, onMicToggle }: Opts): UI {
     const img = document.createElement('img')
     img.src = `/icons/food-${kind}.png`
     img.alt = FOOD_LABELS[kind]
+    img.draggable = false
     btn.appendChild(img)
-    btn.addEventListener('pointerdown', () => unlockAudio())
-    btn.addEventListener('click', () => {
+
+    // arrasta a comida até a boca (tap rápido = voo automático)
+    let drag: { t0: number; x0: number; y0: number; moved: number } | null = null
+    btn.addEventListener('pointerdown', (e) => {
+      unlockAudio()
+      if (!onFoodDragStart(kind, e.clientX, e.clientY)) return
       pop()
+      try {
+        btn.setPointerCapture(e.pointerId)
+      } catch {
+        /* pointer sintético (testes) não captura */
+      }
+      drag = { t0: performance.now(), x0: e.clientX, y0: e.clientY, moved: 0 }
       tray.hidden = true
-      onFeed(kind)
     })
+    btn.addEventListener('pointermove', (e) => {
+      if (!drag) return
+      drag.moved += Math.hypot(e.clientX - drag.x0, e.clientY - drag.y0)
+      drag.x0 = e.clientX
+      drag.y0 = e.clientY
+      onFoodDragMove(e.clientX, e.clientY)
+    })
+    const finish = () => {
+      if (!drag) return
+      const tap = performance.now() - drag.t0 < 250 && drag.moved < 12
+      drag = null
+      onFoodDragEnd(tap)
+    }
+    btn.addEventListener('pointerup', finish)
+    btn.addEventListener('pointercancel', finish)
     tray.appendChild(btn)
   }
 

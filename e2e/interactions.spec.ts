@@ -41,12 +41,27 @@ test('poke: tap rápido vira POKED e volta pro IDLE', async ({ page }) => {
   await page.waitForFunction(() => window.__jujuba.state === 'IDLE')
 })
 
-test('comer: bandeja → EATING → fome +30 → IDLE', async ({ page }) => {
+test('comer (tap): bandeja → voo automático → EATING → fome +30 → IDLE', async ({ page }) => {
   await page.evaluate(() => {
     window.__jujuba.stats.hunger = 40
   })
   await page.getByRole('button', { name: /comer/i }).click()
-  await page.getByRole('button', { name: /biscoito/i }).click()
+  // tap rapidinho no biscoito = voo automático até a boca
+  await page.evaluate(async () => {
+    const btn = document.querySelector('.food-btn')!
+    const r = btn.getBoundingClientRect()
+    const fire = (type: string) =>
+      btn.dispatchEvent(
+        new PointerEvent(type, {
+          clientX: r.x + r.width / 2,
+          clientY: r.y + r.height / 2,
+          bubbles: true,
+        }),
+      )
+    fire('pointerdown')
+    await new Promise((res) => setTimeout(res, 60))
+    fire('pointerup')
+  })
 
   await page.waitForFunction(() => window.__jujuba.state === 'EATING')
   await page.waitForFunction(() => window.__jujuba.state === 'IDLE', undefined, { timeout: 10_000 })

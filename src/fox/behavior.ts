@@ -6,7 +6,14 @@ import type { Stats } from '../game/state'
 import { Purr, squeak } from '../audio/sfx'
 import { clamp } from '../utils/math'
 
-export type FoxState = 'IDLE' | 'PETTING' | 'POKED' | 'EATING' | 'LISTENING' | 'REPLAYING'
+export type FoxState =
+  | 'IDLE'
+  | 'PETTING'
+  | 'POKED'
+  | 'DRAGGING' // comida sendo arrastada até a boca
+  | 'EATING'
+  | 'LISTENING'
+  | 'REPLAYING'
 
 interface Deps {
   animator: FoxAnimator
@@ -33,9 +40,9 @@ export class FoxBehavior {
     this.stateListeners.push(fn)
   }
 
-  /** EATING e REPLAYING são ininterrompíveis. */
+  /** EATING, REPLAYING e DRAGGING não podem ser atropelados por carinho/poke. */
   private canInterrupt(): boolean {
-    return this.state !== 'EATING' && this.state !== 'REPLAYING'
+    return this.state !== 'EATING' && this.state !== 'REPLAYING' && this.state !== 'DRAGGING'
   }
 
   enter(next: FoxState): void {
@@ -71,11 +78,15 @@ export class FoxBehavior {
     this.enter('POKED')
   }
 
-  /** Comida escolhida na bandeja. true = pode começar (main dispara o FeedingSystem). */
-  tryStartEating(): boolean {
-    if (!this.canInterrupt() || this.state === 'EATING') return false
-    this.enter('EATING')
-    return true
+  /** Começo do arrasto de comida. true = pode (main dispara o FeedingSystem). */
+  tryStartDragging(): boolean {
+    const ok =
+      this.state === 'IDLE' ||
+      this.state === 'PETTING' ||
+      this.state === 'POKED' ||
+      this.state === 'LISTENING'
+    if (ok) this.enter('DRAGGING')
+    return ok
   }
 
   update(dt: number): void {
@@ -113,8 +124,14 @@ export class FoxBehavior {
     const eating = this.state === 'EATING'
     const listening = this.state === 'LISTENING'
     const replaying = this.state === 'REPLAYING'
-    pose.excitement = petting ? 0.95 : eating ? 0.7 : replaying ? 0.5 : listening ? 0.3 : 0
-    pose.lean = petting ? clamp(this.strokeNdcX, -1, 1) : 0
+    const dragging = this.state === 'DRAGGING'
+    pose.excitement =
+      petting ? 0.95 : eating ? 0.7 : dragging ? 0.55 : replaying ? 0.5 : listening ? 0.3 : 0
+    pose.lean = petting
+      ? clamp(this.strokeNdcX, -1, 1)
+      : dragging
+        ? clamp(pose.gazeX * 0.5, -1, 1) // se estica na direção do petisco
+        : 0
     pose.earsPerk = listening ? 1 : 0
     pose.headTilt = listening ? 0.14 : 0
     pose.sad = this.deps.stats.hunger < 30 && this.state === 'IDLE' ? 1 : 0

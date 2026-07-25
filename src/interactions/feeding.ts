@@ -13,9 +13,17 @@ export const FOOD_KINDS: FoodKind[] = ['cookie', 'apple', 'drumstick']
 const FLY_DUR = 0.5
 const CHOMP_DUR = 0.38
 const CHOMPS = 3
+/** Plano (z de mundo) onde a comida arrastada flutua, na frente da raposa. */
+const DRAG_PLANE_Z = 0.32
+/** Distâncias (mundo): boca abre a partir de JAW_START; abocanha em SNAP;
+ *  soltar dentro de RELEASE_EAT ainda conta como entregar. */
+const JAW_START = 0.55
+const SNAP = 0.16
+const RELEASE_EAT = 0.34
 
 interface Deps {
   scene: THREE.Scene
+  camera: THREE.Camera
   rig: FoxRig
   animator: FoxAnimator
   particles: Particles
@@ -26,7 +34,7 @@ interface Deps {
 export class FeedingSystem {
   private templates = new Map<FoodKind, THREE.Object3D>()
   private current: THREE.Object3D | null = null
-  private phase: 'idle' | 'fly' | 'chomp' | 'swallow' = 'idle'
+  private phase: 'idle' | 'drag' | 'cancel' | 'fly' | 'chomp' | 'swallow' = 'idle'
   private t = 0
   private cycleT = 0
   private bitten = false
@@ -34,8 +42,16 @@ export class FeedingSystem {
   private from = new THREE.Vector3()
   private mouth = new THREE.Vector3()
   private jaw = 0
+  private dragTarget = new THREE.Vector3()
+  private ray = new THREE.Raycaster()
+  private ndc = new THREE.Vector2()
+  private dragPlane = new THREE.Plane(new THREE.Vector3(0, 0, 1), -DRAG_PLANE_Z)
   /** Chamado quando a refeição termina (main devolve o estado pra IDLE). */
   onDone: (() => void) | null = null
+  /** Chamado quando ela abocanha (DRAGGING → EATING). */
+  onSnap: (() => void) | null = null
+  /** Chamado quando o arrasto é cancelado (soltou longe). */
+  onCancel: (() => void) | null = null
 
   constructor(private deps: Deps) {}
 
@@ -53,19 +69,71 @@ export class FeedingSystem {
     return this.phase !== 'idle'
   }
 
-  start(kind: FoodKind): boolean {
+  get dragging(): boolean {
+    return this.phase === 'drag'
+  }
+
+  /** Ponto do dedo projetado no plano de arrasto. */
+  private fingerPoint(clientX: number, clientY: number, out: THREE.Vector3): THREE.Vector3 {
+    this.ndc.set((clientX / innerWidth) * 2 - 1, -(clientY / innerHeight) * 2 + 1)
+    this.ray.setFromCamera(this.ndc, this.deps.camera)
+    if (!this.ray.ray.intersectPlane(this.dragPlane, out)) out.set(0, 0.6, DRAG_PLANE_Z)
+    return out
+  }
+
+  private spawn(kind: FoodKind): boolean {
     const tpl = this.templates.get(kind)
     if (!tpl || this.active) return false
     this.current = tpl.clone(true)
-    this.deps.scene.add(this.current)
-    this.from.set(0.5, 0.3, 1.1) // nasce embaixo/na frente, à direita
-    this.current.position.copy(this.from)
     this.current.rotation.x = 1.1 // inclinada pra câmera (biscoito de frente)
-    this.phase = 'fly'
+    this.deps.scene.add(this.current)
     this.t = 0
     this.bites = 0
     this.jaw = 0
     return true
+  }
+
+  /** Começa o arrasto com a comida grudada no dedo. */
+  beginDrag(kind: FoodKind, clientX: number, clientY: number): boolean {
+    if (!this.spawn(kind)) return false
+    this.fingerPoint(clientX, clientY, this.dragTarget)
+    this.current!.position.copy(this.dragTarget)
+    this.phase = 'drag'
+    return true
+  }
+
+  moveDrag(clientX: number, clientY: number): void {
+    if (this.phase !== 'drag') return
+    this.fingerPoint(clientX, clientY, this.dragTarget)
+    // ela acompanha o petisco com o olhar
+    this.deps.pose.gazeX = (clientX / innerWidth) * 2 - 1
+    this.deps.pose.gazeY = -((clientY / innerHeight) * 2 - 1)
+    this.deps.pose.gazeActive = true
+  }
+
+  /** Soltou o dedo: tap = voo automático; perto da boca = entrega; longe = cancela. */
+  endDrag(tap: boolean): void {
+    if (this.phase !== 'drag') return
+    const dist = this.current!.position.distanceTo(this.mouthAnchor())
+    if (tap) {
+      this.from.copy(this.current!.position)
+      this.phase = 'fly'
+      this.t = 0
+    } else if (dist < RELEASE_EAT) {
+      this.startChomp()
+    } else {
+      this.phase = 'cancel'
+      this.t = 0
+    }
+  }
+
+  private startChomp(): void {
+    this.phase = 'chomp'
+    this.t = 0
+    this.cycleT = 0
+    this.bitten = false
+    this.jaw = 1
+    this.onSnap?.()
   }
 
   private mouthAnchor(): THREE.Vector3 {
@@ -82,6 +150,38 @@ export class FeedingSystem {
     this.t += dt
 
     switch (this.phase) {
+      case 'drag': {
+        // comida persegue o dedo com suavização
+        const p = this.current!.position
+        p.x = damp(p.x, this.dragTarget.x, 22, dt)
+        p.y = damp(p.y, this.dragTarget.y, 22, dt)
+        p.z = damp(p.z, this.dragTarget.z, 22, dt)
+        this.current!.rotation.y += dt * 2
+
+        // boca-imã: abre conforme aproxima; pertinho, abocanha sozinha
+        const dist = p.distanceTo(this.mouthAnchor())
+        if (dist < SNAP) {
+          this.startChomp()
+          break
+        }
+        this.jaw = clamp((JAW_START - dist) / (JAW_START - SNAP), 0, 1) * 0.95
+        break
+      }
+      case 'cancel': {
+        // soltou longe: a comida murcha num "puf"
+        const k = 1 - this.t / 0.22
+        if (k <= 0) {
+          this.deps.scene.remove(this.current!)
+          this.current = null
+          this.phase = 'idle'
+          pose.jawOpen = 0
+          this.onCancel?.()
+          return
+        }
+        this.current!.scale.setScalar(Math.max(k, 0.01))
+        this.jaw = damp(this.jaw, 0, 18, dt)
+        break
+      }
       case 'fly': {
         const k = clamp(this.t / FLY_DUR, 0, 1)
         const e = k * k * (3 - 2 * k) // smoothstep
@@ -90,12 +190,7 @@ export class FeedingSystem {
         this.current!.position.y += Math.sin(k * Math.PI) * 0.18 // arquinho
         this.current!.rotation.y += dt * 4
         this.jaw = e * 0.95 // boca abre antecipando
-        if (k >= 1) {
-          this.phase = 'chomp'
-          this.t = 0
-          this.cycleT = 0
-          this.bitten = false
-        }
+        if (k >= 1) this.startChomp()
         break
       }
       case 'chomp': {
