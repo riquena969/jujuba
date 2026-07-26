@@ -10,7 +10,7 @@ import { asset } from '../utils/assets'
 
 export type BathTool = 'sponge' | 'shower'
 
-const MAX_FOAM = 40
+const MAX_FOAM = 96 // dá pra ensaboar a raposa INTEIRA (40 nem cobria metade)
 /** px de esfregada que geram uma bolha nova */
 const FOAM_STROKE_PX = 26
 /** raio (mundo) que a ducha limpa por passada */

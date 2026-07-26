@@ -452,6 +452,69 @@ body {
   filter: drop-shadow(0 3px 5px rgba(40, 90, 100, 0.4));
 }
 
+.credits-panel[hidden] {
+  display: none;
+}
+
+.credits-panel {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(60, 34, 16, 0.45);
+  pointer-events: auto;
+  z-index: 8;
+  padding: 24px;
+}
+
+.credits-card {
+  position: relative;
+  background: #fffaf2;
+  border-radius: 26px;
+  padding: 26px 22px 20px;
+  max-width: 330px;
+  box-shadow: 0 14px 40px rgba(60, 34, 16, 0.35);
+  font-size: 14.5px;
+  line-height: 1.5;
+  color: #5a3b28;
+}
+
+.credits-card h2 {
+  margin: 0 0 10px;
+  font-size: 22px;
+  color: #a85b2f;
+}
+
+.credits-card p {
+  margin: 0 0 12px;
+}
+
+.credits-card a {
+  color: #d96a2b;
+  font-weight: 700;
+}
+
+.credits-note {
+  font-size: 12.5px;
+  color: #8a6a58;
+}
+
+.credits-close {
+  position: absolute;
+  top: 10px;
+  right: 12px;
+  width: 40px;
+  height: 40px;
+  border: none;
+  border-radius: 50%;
+  background: #ffe9d8;
+  color: #a85b2f;
+  font-size: 17px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
 .night {
   position: absolute;
   inset: 0;

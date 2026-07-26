@@ -58,7 +58,29 @@ def build_sala():
         lib.sphere('leaf_3', 0.13, (-0.86, 1.47, 0.58), material=leaf),
         lib.sphere('leaf_4', 0.11, (-0.74, 1.42, 0.68), material=leaf),
     ]
-    return lib.join(parts, 'RoomSala')
+    sala = lib.join(parts, 'RoomSala')
+
+    # quadro pendurado (mesh SEPARADA 'Quadro' — tap nele abre os créditos):
+    # moldura dourada + tela creme com um retratinho da raposinha
+    frame_m = lib.mat('FrameGold', '#E8C36A', roughness=0.5)
+    canvas_m = lib.mat('CanvasCream', '#FFF8EC', roughness=0.9)
+    photo_m = lib.mat('PhotoOrange', '#F97B2F', roughness=0.8)
+    tilt = (D(-8), 0, 0)  # levemente inclinado pra câmera
+    q = [
+        lib.box('quadro_frame', (0.44, 0.05, 0.36), (-0.6, 2.15, 1.5),
+                material=frame_m, bevel=0.02, rot=tilt),
+        lib.box('quadro_canvas', (0.37, 0.035, 0.29), (-0.6, 2.12, 1.5),
+                material=canvas_m, bevel=0.012, rot=tilt),
+        # retratinho: cabecinha + orelhinhas
+        lib.sphere('quadro_fox', 0.085, (-0.6, 2.095, 1.48), scale=(1, 0.35, 0.9),
+                   material=photo_m, rot=tilt),
+        lib.cone('quadro_ear_l', 0.035, 0.006, 0.09, (-0.545, 2.1, 1.575),
+                 scale=(1, 0.35, 1), rot=(D(-8), D(18), 0), material=photo_m),
+        lib.cone('quadro_ear_r', 0.035, 0.006, 0.09, (-0.655, 2.1, 1.575),
+                 scale=(1, 0.35, 1), rot=(D(-8), D(-18), 0), material=photo_m),
+    ]
+    lib.join(q, 'Quadro')
+    return sala
 
 
 def build_quarto():

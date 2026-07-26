@@ -1,4 +1,4 @@
-import type { FoxRig } from './rig'
+import type { EyeStyleName, FoxRig } from './rig'
 import { clamp, damp } from '../utils/math'
 
 /** Expressões faciais: springs de morphs + agendador de piscada.
@@ -8,6 +8,8 @@ export class Expressions {
   smileTarget = 0
   /** Piscada forçada (carinho = olhinhos fechados felizes). */
   blinkHold = false
+  /** Estilo de olho alvo (v3): large normal, narrow soninho, sad tristinha. */
+  eyeStyle: EyeStyleName = 'large'
 
   private smile = 0
   private blink = 0 // 0 aberto, 1 fechado
@@ -55,11 +57,16 @@ export class Expressions {
       // v2: piscada por PÁLPEBRA (fechar = rotação negativa em X)
       this.rig.addRotation('lidL', 'x', -b * LID_CLOSE_RAD)
       this.rig.addRotation('lidR', 'x', -b * LID_CLOSE_RAD)
-    } else {
-      // v1: morphs achatando o olho
+    } else if (this.rig.hasMorph('blinkL')) {
+      // v1: morphs achatando o olho num arco feliz
       this.rig.setMorph('blinkL', b)
       this.rig.setMorph('blinkR', b)
+    } else {
+      // v3: piscada cartoon achatando o osso do olho na vertical
+      this.rig.squashEyesVertical(b)
     }
+    // v3: olhinhos por estilo (setado pelo behavior por estado)
+    this.rig.setEyeStyle(this.eyeStyle)
     this.rig.setMorph('smile', clamp(this.smile, 0, 1))
   }
 }

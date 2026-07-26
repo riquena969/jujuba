@@ -9,14 +9,17 @@ import sys
 
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 import lib  # noqa: E402
-import jujuba_v1  # noqa: E402
+import jujuba_v3  # noqa: E402
 
 if __name__ == '__main__':
     import bpy
 
-    body, eyes, arm = jujuba_v1.build()
-    # sorrisinho leve pro ícone
+    body, eye_sets, teeth, tongue, arm, ref = jujuba_v3.build()
+    # sorrisinho leve pro ícone; só o par de olhos padrão aparece
     lib.set_shape(body, 'smile', 0.6)
+    for style, sides in eye_sets.items():
+        for o in sides.values():
+            o.hide_render = style != 'large'
 
     cam = None
     for size in (512, 192, 180):
@@ -28,6 +31,7 @@ if __name__ == '__main__':
         bg.inputs[1].default_value = 1.0
         if cam is None:
             cam = lib.add_preview_rig()
-        lib.render_shot(cam, f'icon-{size}', (0, -0.92, 0.94), (0, 0, 0.88),
+        fz = ref['eyeL'].z - 0.04
+        lib.render_shot(cam, f'icon-{size}', (0, -0.95, fz + 0.06), (0, 0, fz),
                         out_dir=lib.ICONS_DIR)
     lib.log('ICONS OK')

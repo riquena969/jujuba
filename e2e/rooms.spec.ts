@@ -110,6 +110,24 @@ test('mic desligado na mão NÃO religa sozinho', async ({ page }) => {
   expect(await page.evaluate(() => window.__jujuba.voice?.enabled)).toBe(false)
 })
 
+test('quadro da sala abre os créditos', async ({ page }) => {
+  await page.waitForFunction(() => window.__jujuba.credits?.quadroScreenPosition() !== null)
+  const q = await page.evaluate(() => window.__jujuba.credits.quadroScreenPosition())
+  await page.evaluate(async ({ x, y }) => {
+    const canvas = document.querySelector('#game')!
+    const fire = (type: string) =>
+      canvas.dispatchEvent(new PointerEvent(type, { clientX: x, clientY: y, bubbles: true }))
+    fire('pointerdown')
+    await new Promise((r) => setTimeout(r, 60))
+    fire('pointerup')
+  }, q)
+  await expect(page.locator('.credits-panel')).toBeVisible()
+  await expect(page.locator('.credits-card')).toContainText('Robetti')
+  await expect(page.locator('.credits-card')).toContainText('SculptCuteness')
+  await page.locator('.credits-close').click()
+  await expect(page.locator('.credits-panel')).toBeHidden()
+})
+
 test('sala persiste entre visitas', async ({ page }) => {
   await page.locator('.room-prev').click() // cozinha
   await page.waitForTimeout(200)

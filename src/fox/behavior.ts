@@ -238,6 +238,14 @@ export class FoxBehavior {
           : 0
     expressions.smileTarget = petting ? 1 : bathing ? this.bathHappy : 0
     expressions.blinkHold = petting || sleeping || (bathing && this.bathHappy > 0.45)
+    // olhinhos por estilo (v3): soninho = estreitinho; fome/sujeira = tristinho
+    expressions.eyeStyle = sleeping
+      ? 'narrow'
+      : st.energy < 25 && this.state === 'IDLE'
+        ? 'narrow'
+        : pose.sad >= 1
+          ? 'sad'
+          : 'large'
     // jawOpen: escrito pela comida (FeedingSystem) e pela voz (VoiceSystem)
   }
 }

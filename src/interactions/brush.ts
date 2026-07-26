@@ -31,8 +31,8 @@ const BRUSH_PLANE_Z = 0.42 // plano do dedo/escova na frente da carinha
  *  aberta do modo escovação. z empurrado pra frente da malha (depthTest on:
  *  a escova passa POR CIMA e cobre as manchas — oclusão correta). */
 const SPOT_OFFSETS: [number, number, number][] = [
-  [-0.052, -0.024, 0.235], [0.0, -0.028, 0.24], [0.052, -0.024, 0.235],
-  [-0.04, -0.08, 0.21], [0.017, -0.082, 0.213], [0.046, -0.079, 0.208],
+  [-0.05, -0.008, 0.16], [0.0, -0.011, 0.165], [0.05, -0.008, 0.16],
+  [-0.04, -0.081, 0.133], [0.017, -0.083, 0.135], [0.046, -0.079, 0.13],
 ]
 
 interface Deps {
@@ -192,8 +192,8 @@ export class BrushSystem {
   /** Centro da boca em px (pros testes esfregarem no lugar certo). */
   mouthScreen(): { x: number; y: number } {
     this.deps.rig.mouthWorld(this.tmpV)
-    this.tmpV.y -= 0.05
-    this.tmpV.z += 0.2
+    this.tmpV.y -= 0.03
+    this.tmpV.z += 0.16
     this.tmpV.project(this.deps.gs.camera)
     return { x: ((this.tmpV.x + 1) / 2) * innerWidth, y: ((1 - this.tmpV.y) / 2) * innerHeight }
   }
@@ -280,10 +280,11 @@ export class BrushSystem {
     }
     const k = this.zoom * this.zoom * (3 - 2 * this.zoom) // easing suave
     const m = this.deps.rig.mouthWorld(this.mouth)
-    // bem perto da boca aberta (a respiração da cabeça dá um leve "handheld")
-    this.tmpV.set(0, m.y + 0.11, m.z + 0.92)
+    // perto da boca aberta mas com a carinha no quadro (a respiração da
+    // cabeça dá um leve "handheld")
+    this.tmpV.set(0, m.y + 0.16, m.z + 1.18)
     cam.position.lerpVectors(this.baseCamPos, this.tmpV, k)
-    this.tmpV2.set(0, m.y - 0.01, m.z + 0.18)
+    this.tmpV2.set(0, m.y + 0.03, m.z + 0.18)
     this.tmpV.lerpVectors(this.baseLook, this.tmpV2, k)
     cam.lookAt(this.tmpV)
   }

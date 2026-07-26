@@ -18,6 +18,11 @@ export const MORPH_NAMES = ['blinkL', 'blinkR', 'smile', 'sad', 'cheekPuff'] as 
 export type MorphName = (typeof MORPH_NAMES)[number]
 const REQUIRED_MORPHS: MorphName[] = ['smile']
 
+/** Estilos de olho trocáveis (v3): meshes EyeL/EyeR (large) +
+ *  EyeStyleNarrowL/R (soninho) + EyeStyleSadL/R (tristinha). */
+export const EYE_STYLE_NAMES = ['large', 'narrow', 'sad'] as const
+export type EyeStyleName = (typeof EYE_STYLE_NAMES)[number]
+
 interface MorphRef {
   mesh: THREE.Mesh
   index: number
@@ -49,6 +54,11 @@ export class FoxRig {
   teethMaterial: THREE.MeshStandardMaterial | null = null
   private present = new Set<AnyBoneName>()
   private readonly tmpQ = new THREE.Quaternion()
+  private eyeStyles = { large: [], narrow: [], sad: [] } as Record<
+    EyeStyleName,
+    THREE.Object3D[]
+  >
+  private currentEyeStyle: EyeStyleName = 'large'
 
   private constructor(readonly root: THREE.Group) {}
 
@@ -93,6 +103,19 @@ export class FoxRig {
         }
       }
     })
+    // olhos por estilo (v3): EyeL/EyeR = large; EyeStyle<Nome><L|R> = extras
+    for (const [style, names] of [
+      ['large', ['EyeL', 'EyeR']],
+      ['narrow', ['EyeStyleNarrowL', 'EyeStyleNarrowR']],
+      ['sad', ['EyeStyleSadL', 'EyeStyleSadR']],
+    ] as [EyeStyleName, string[]][]) {
+      for (const n of names) {
+        const o = gltf.scene.getObjectByName(n)
+        if (o) rig.eyeStyles[style].push(o)
+      }
+    }
+    if (rig.hasEyeStyles) rig.setEyeStyle('large')
+
     // material dos dentes (mesh 'Teeth' — pode ser Group de primitives)
     const teeth = gltf.scene.getObjectByName('Teeth')
     teeth?.traverse((o) => {
@@ -119,6 +142,44 @@ export class FoxRig {
 
   hasBone(name: AnyBoneName): boolean {
     return this.present.has(name)
+  }
+
+  hasMorph(name: MorphName): boolean {
+    return this.morphs[name].length > 0
+  }
+
+  /** v3 tem estilos extras de olho; v1/v2 só o par padrão (sem troca). */
+  get hasEyeStyles(): boolean {
+    return this.eyeStyles.narrow.length > 0
+  }
+
+  /** Mostra um estilo de olho e esconde os outros (no-op sem estilos). */
+  setEyeStyle(style: EyeStyleName): void {
+    if (!this.hasEyeStyles) return
+    if (this.eyeStyles[style].length === 0) style = 'large'
+    if (style === this.currentEyeStyle) return
+    this.currentEyeStyle = style
+    for (const [s, objs] of Object.entries(this.eyeStyles)) {
+      for (const o of objs) o.visible = s === style
+    }
+  }
+
+  /** Piscada cartoon (v3): achata os olhos na vertical de MUNDO via escala do
+   *  osso (a componente local dominante do eixo Z de mundo). */
+  squashEyesVertical(k: number): void {
+    if (k <= 0) return
+    for (const name of ['eyeL', 'eyeR'] as const) {
+      if (!this.present.has(name)) continue
+      const zAxis = this.axes[name].z
+      const idx =
+        Math.abs(zAxis.x) >= Math.abs(zAxis.y) && Math.abs(zAxis.x) >= Math.abs(zAxis.z)
+          ? 0
+          : Math.abs(zAxis.y) >= Math.abs(zAxis.z)
+            ? 1
+            : 2
+      const b = this.bones[name]
+      b.scale.setComponent(idx, b.scale.getComponent(idx) * (1 - k * 0.93))
+    }
   }
 
   /** Volta todos os ossos à pose de descanso — chamada no início de cada frame. */

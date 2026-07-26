@@ -5,10 +5,10 @@ import * as THREE from 'three'
  *  controlada por setHygiene(). O banho zera tudo. */
 
 const SPOTS: [number, number, number][] = [
-  [0.12, 0.52, 0.2], [-0.15, 0.44, 0.19], [0.05, 0.33, 0.22],
-  [-0.08, 0.62, 0.2], [0.18, 0.72, 0.21], [-0.19, 0.78, 0.2],
-  [0.1, 0.9, 0.24], [-0.06, 0.98, 0.24], [0.2, 0.28, 0.18],
-  [-0.16, 0.24, 0.18],
+  [0.12, 0.52, 0.25], [-0.15, 0.44, 0.24], [0.05, 0.33, 0.27],
+  [-0.08, 0.62, 0.25], [0.18, 0.72, 0.26], [-0.19, 0.78, 0.25],
+  [0.1, 0.9, 0.29], [-0.06, 0.98, 0.29], [0.2, 0.28, 0.23],
+  [-0.16, 0.24, 0.23],
 ]
 
 function dirtTexture(): THREE.CanvasTexture {
@@ -69,7 +69,7 @@ export class DirtLayer {
 
 /** Farelinhos de comida na boca — aparecem conforme os dentes sujam. */
 const MOUTH_SPOTS: [number, number, number][] = [
-  [0.065, 0.695, 0.34], [-0.055, 0.66, 0.335], [0.005, 0.635, 0.33],
+  [0.065, 0.645, 0.27], [-0.055, 0.61, 0.265], [0.005, 0.585, 0.26],
 ]
 
 export class MouthDirt {

@@ -9,9 +9,11 @@ raposinha chibi (você escolhe o nome — padrão Foxy) que reage a carinho, com
 **imita a sua voz** com vozinha aguda — igual ao Talking Tom raiz. Cinco cômodos
 (🍳 cozinha, 🛋️ sala, 🌙 quarto, 🛁 banheiro, 🧸 brinquedos) nas setinhas do topo.
 Ela se suja com o tempo (manchinhas + barra 🧼) e comer suja os dentinhos (farelos +
-dentes amarelando + manchas nos dentes) — **banheira, pia e potinho de bolha brilham
-piscando quando pedem um toque**. Modelo 3D chibi paramétrico (a v1 querida), agora
-com dentinhos e língua que aparecem quando a boca abre.
+dentes amarelando + manchas nos vãos da arcada) — **banheira, pia e potinho de bolha
+brilham piscando quando pedem um toque**. Modelo 3D: adaptação CC-BY (créditos no
+quadro pendurado na sala e no fim deste README) com re-rig completo, arcada de 12
+dentinhos, língua e **olhinhos expressivos por estilo** (normal, soninho, tristinha —
+trocam sozinhos com o humor dela).
 
 Tudo 3D (Three.js), com o modelo **gerado 100% por script no Blender** (nada de assets
 comprados): malha, ossos, expressões e ícones saem de `blender/*.py`.
@@ -94,7 +96,8 @@ npm run test:e2e   # Playwright + mic FAKE (WAV sintético de fala) — cobre ca
 
 ## Salas & atividades
 
-🍳 cozinha (roleta de comidas) · 🛋️ sala (imitar a voz) · 🌙 quarto (dormir) ·
+🍳 cozinha (roleta de comidas) · 🛋️ sala (imitar a voz + **quadro de créditos**
+clicável) · 🌙 quarto (dormir) ·
 🛁 banheiro (banho + **escovação em close**: a câmera dá zoom na boca escancarada,
 com dentinhos de verdade mostrando manchas de sujeira — escova 3D no dedo esfrega,
 o jatinho 💦 enxágua, gargarejo + cuspidinha no final) · 🧸 **brinquedos**: bolinha
@@ -108,3 +111,20 @@ rápidas e mais dançantes.
 
 v0.6 roupinhas + guarda-roupa · v0.7 moedas + mais minigames · depois: modo offline,
 conversa de verdade via IA.
+
+## Créditos (modelos CC-BY adaptados)
+
+A raposinha atual é uma adaptação (dieta de polígonos, re-rig no nosso esqueleto,
+boca articulada com dentes/língua e olhos expressivos) de dois modelos CC-BY:
+
+> This work is based on "Rigged Cute Fox character"
+> (https://sketchfab.com/3d-models/rigged-cute-fox-character-ab556b01e9be4163888a9c1ac05675db)
+> by Robetti (https://sketchfab.com/Robetti) licensed under CC-BY-4.0
+> (http://creativecommons.org/licenses/by/4.0/)
+
+> This work is based on "Eyeballs Stylized Flat Anime Cartoon Eyes 4k"
+> (https://sketchfab.com/3d-models/eyeballs-stylized-flat-anime-cartoon-eyes-4k-5f8c96c3645a4e27bcb0c2e7ee0a8669)
+> by SculptCuteness (https://sketchfab.com/SculptCuteness) licensed under CC-BY-4.0
+> (http://creativecommons.org/licenses/by/4.0/)
+
+A v1 100% scriptada segue no repo (`blender/jujuba_v1.py`, `npm run fox:build:v1`).

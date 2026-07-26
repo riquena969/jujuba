@@ -43,6 +43,8 @@ export interface UI {
   /** Minigame das bolhas: HUD de rodada/estouradas + Voltar. */
   setPlayMode(on: boolean): void
   updateGameHud(round: number, popped: number): void
+  /** Painel de créditos (quadro da sala). */
+  showCredits(): void
 }
 
 export function createUI({
@@ -217,6 +219,32 @@ export function createUI({
   gameHud.className = 'game-hud'
   gameHud.hidden = true
 
+  // ---- créditos (tap no quadro da sala) ----
+  const credits = document.createElement('div')
+  credits.className = 'credits-panel'
+  credits.hidden = true
+  credits.innerHTML = `
+    <div class="credits-card">
+      <button class="credits-close" aria-label="Fechar">✕</button>
+      <h2>Créditos 🦊</h2>
+      <p class="credits-note">A raposinha é uma adaptação carinhosa (dieta de
+      polígonos, esqueleto novo, boca articulada com dentinhos e olhos
+      expressivos) destes modelos CC-BY-4.0:</p>
+      <p><a href="https://sketchfab.com/3d-models/rigged-cute-fox-character-ab556b01e9be4163888a9c1ac05675db"
+        target="_blank" rel="noopener">Rigged Cute Fox character</a><br>
+        por <a href="https://sketchfab.com/Robetti" target="_blank" rel="noopener">Robetti</a></p>
+      <p><a href="https://sketchfab.com/3d-models/eyeballs-stylized-flat-anime-cartoon-eyes-4k-5f8c96c3645a4e27bcb0c2e7ee0a8669"
+        target="_blank" rel="noopener">Eyeballs Stylized Flat Anime Cartoon Eyes 4k</a><br>
+        por <a href="https://sketchfab.com/SculptCuteness" target="_blank" rel="noopener">SculptCuteness</a></p>
+      <p class="credits-note">Licença <a href="https://creativecommons.org/licenses/by/4.0/"
+        target="_blank" rel="noopener">CC-BY-4.0</a> · o resto do jogo é 100% feito em casa 💛</p>
+    </div>`
+  credits.addEventListener('click', (e) => {
+    if (e.target === credits || (e.target as HTMLElement).closest('.credits-close')) {
+      credits.hidden = true
+    }
+  })
+
   // ---- dormir (só no quarto) ----
   const sleepBtn = document.createElement('button')
   sleepBtn.className = 'btn btn-sleep'
@@ -227,7 +255,7 @@ export function createUI({
     onSleepToggle()
   })
 
-  hud.append(night, bars, nav, toast, carousel, micBtn, sleepBtn, backBtn, tools, brushTools, gameHud, overlay)
+  hud.append(night, bars, nav, toast, carousel, micBtn, sleepBtn, backBtn, tools, brushTools, gameHud, credits, overlay)
 
   return {
     setMicVisual(mode) {
@@ -297,6 +325,9 @@ export function createUI({
     },
     updateGameHud(round, popped) {
       gameHud.textContent = `Rodada ${round} · 🫧 ${popped}`
+    },
+    showCredits() {
+      credits.hidden = false
     },
   }
 }

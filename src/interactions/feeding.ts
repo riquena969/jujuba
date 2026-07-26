@@ -145,10 +145,11 @@ export class FeedingSystem {
   }
 
   private mouthAnchor(): THREE.Vector3 {
-    // o osso jaw fica no PIVÔ (fundo da mandíbula) — empurra pra frente dos lábios
+    // o osso jaw fica no PIVÔ (fundo da mandíbula) — empurra pra frente dos
+    // lábios (v3: boca em three ~(0, 0.62, 0.25), pivô (0, 0.64, 0.11))
     this.deps.rig.mouthWorld(this.mouth)
-    this.mouth.y -= 0.045
-    this.mouth.z += 0.24
+    this.mouth.y -= 0.025
+    this.mouth.z += 0.2
     return this.mouth
   }
 

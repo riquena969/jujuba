@@ -16,6 +16,7 @@ import { PlayBall } from './interactions/playball'
 import { BubbleGame } from './interactions/bubbles'
 import { NeedGlow } from './fx/needglow'
 import { createUI } from './game/ui'
+import { CreditsSystem } from './game/credits'
 import { Rooms, type RoomId } from './game/rooms'
 import { DirtLayer, MouthDirt } from './fx/dirt'
 import { asset } from './utils/assets'
@@ -61,6 +62,7 @@ let bath: BathSystem | null = null
 let brush: BrushSystem | null = null
 let ball: PlayBall | null = null
 let bubbles: BubbleGame | null = null
+let credits: CreditsSystem | null = null
 
 const rooms = new Rooms(gs, stats.room as RoomId)
 void rooms.load()
@@ -96,6 +98,7 @@ FoxRig.load(asset('models/jujuba.glb'))
     void brush.preload()
     ball = new PlayBall({ gs, behavior, stats, pose, canvas })
     bubbles = new BubbleGame({ gs, rooms, behavior, particles, stats, pose, canvas })
+    credits = new CreditsSystem({ gs, rooms, behavior, canvas })
     const ui = createUI({
       onFoodDragStart(kind, x, y) {
         if (!behavior || !feeding || feeding.active) return false
@@ -224,6 +227,7 @@ FoxRig.load(asset('models/jujuba.glb'))
     }
     brush.onToolChange = (tool) => ui.setBrushTool(tool)
     brush.onHint = (text) => ui.setBrushHint(text)
+    credits.onOpen = () => ui.showCredits()
     bubbles.onEnter = () => {
       ui.setPlayMode(true)
       ui.updateGameHud(1, 0)
@@ -324,6 +328,9 @@ if (DEBUG) {
       },
       get bubbles() {
         return bubbles
+      },
+      get credits() {
+        return credits
       },
       dirt,
       mouthDirt,
