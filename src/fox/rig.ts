@@ -50,8 +50,9 @@ export class FoxRig {
   private morphs = {
     blinkL: [], blinkR: [], smile: [], sad: [], cheekPuff: [],
   } as Record<MorphName, MorphRef[]>
-  /** Material dos dentinhos (v2) — escovação tinge de amarelo→branco. */
+  /** Material dos dentinhos (v2+) — escovação tinge de amarelo→branco. */
   teethMaterial: THREE.MeshStandardMaterial | null = null
+  private teethObject: THREE.Object3D | null = null
   private present = new Set<AnyBoneName>()
   private readonly tmpQ = new THREE.Quaternion()
   private eyeStyles = { large: [], narrow: [], sad: [] } as Record<
@@ -127,6 +128,9 @@ export class FoxRig {
     teeth?.traverse((o) => {
       if (o instanceof THREE.Mesh && rig.teethMaterial) o.material = rig.teethMaterial
     })
+    // a arcada é segredo da escovação — no resto do jogo, boquinha fofa
+    rig.teethObject = teeth ?? null
+    rig.setTeethVisible(false)
 
     for (const name of REQUIRED_MORPHS) {
       if (rig.morphs[name].length === 0) missingMorphs.push(name)
@@ -146,6 +150,11 @@ export class FoxRig {
 
   hasMorph(name: MorphName): boolean {
     return this.morphs[name].length > 0
+  }
+
+  /** Dentinhos aparecem SÓ no modo escovação (pedido do Kevin). */
+  setTeethVisible(on: boolean): void {
+    if (this.teethObject) this.teethObject.visible = on
   }
 
   /** v3 tem estilos extras de olho; v1/v2 só o par padrão (sem troca). */

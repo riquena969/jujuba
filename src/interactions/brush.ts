@@ -235,6 +235,7 @@ export class BrushSystem {
     if (group) group.visible = false
     this.brushSet.visible = true
     this.deps.gs.setRoomLook(BATH_LOOK)
+    this.deps.rig.setTeethVisible(true) // a arcada só aparece aqui
     this.saveCamera()
     this.makeSpots()
     this.setTool('brush')
@@ -251,6 +252,7 @@ export class BrushSystem {
     this.clearSpots()
     this.rinsePhase = 'idle'
     this.deps.pose.jawOpen = 0
+    this.deps.rig.setTeethVisible(false)
     if (this.brushSet) this.brushSet.visible = false
     if (this.brushMesh) this.brushMesh.visible = false
     const group = this.deps.rooms.currentGroup()
